@@ -5,7 +5,7 @@ from werkzeug.security import generate_password_hash
 from config import Config
 from models import db, Usuario
 
-app = Flask(_name_)
+app = Flask(__name__)
 app.config.from_object(Config)
 
 db.init_app(app)
@@ -19,7 +19,7 @@ def load_user(user_id):
     return Usuario.query.get(int(user_id))
 
 
-# Crear tablas y usuario administrador autom·ticamente
+# Crear tablas y usuario administrador autom√°ticamente
 with app.app_context():
 
     db.create_all()
@@ -53,6 +53,6 @@ def dashboard():
     return render_template("dashboard.html")
 
 
-if _name_ == "_main_":
+if __name__ == "_main_":
 
     app.run(debug=True)
