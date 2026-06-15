@@ -1,99 +1,131 @@
 {% extends 'base.html' %}
-{% block title %}Proveedores{% endblock %}
-{% block page_title %}Proveedores{% endblock %}
+{% block title %}Nueva Venta{% endblock %}
+{% block page_title %}Nueva Venta{% endblock %}
 
 {% block content %}
 <div class="row g-3">
-  <div class="col-md-4">
-    <div class="card">
-      <div class="card-header p-3"><i class="fas fa-plus me-2 text-primary"></i>Nuevo Proveedor</div>
+  <!-- Panel izquierdo: busqueda y carrito -->
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header p-3">
+        <i class="fas fa-barcode me-2 text-primary"></i>Agregar Producto
+      </div>
       <div class="card-body">
-        <form method="POST" action="{{ url_for('nuevo_proveedor') }}">
-          <div class="mb-2">
-            <label class="form-label fw-semibold small">Nombre *</label>
-            <input type="text" name="nombre" class="form-control form-control-sm" required>
+        <div class="row g-2 align-items-end">
+          <div class="col-md-6">
+            <label class="form-label fw-semibold small">C&oacute;digo de Barra / Nombre</label>
+            <input type="text" id="codigoBuscar" class="form-control" 
+                   placeholder="Escanea o escribe..." autofocus>
           </div>
-          <div class="mb-2">
-            <label class="form-label fw-semibold small">Telefono</label>
-            <input type="text" name="telefono" class="form-control form-control-sm">
+          <div class="col-md-3">
+            <label class="form-label fw-semibold small">Cantidad</label>
+            <input type="number" id="cantidadInput" class="form-control" value="1" min="1">
           </div>
-          <div class="mb-2">
-            <label class="form-label fw-semibold small">Correo</label>
-            <input type="email" name="correo" class="form-control form-control-sm">
+          <div class="col-md-3">
+            <button class="btn btn-primary w-100" onclick="buscarProducto()">
+              <i class="fas fa-plus me-1"></i>Agregar
+            </button>
           </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold small">Direccion</label>
-            <textarea name="direccion" class="form-control form-control-sm" rows="2"></textarea>
-          </div>
-          <button class="btn btn-primary btn-sm w-100"><i class="fas fa-save me-1"></i>Guardar</button>
-        </form>
+        </div>
+        <div id="resultadoBusqueda" class="mt-2"></div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="card-header p-3">
+        <i class="fas fa-shopping-cart me-2 text-primary"></i>Carrito
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table align-middle mb-0" id="tablaCarrito">
+            <thead>
+              <tr>
+                <th class="ps-3">Producto</th>
+                <th>Precio</th>
+                <th>Cantidad</th>
+                <th>Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="carritoBody">
+              <tr id="carritoVacio">
+                <td colspan="5" class="text-center text-muted py-4">
+                  <i class="fas fa-shopping-cart fa-2x mb-2 d-block opacity-25"></i>
+                  Agrega productos escaneando o buscando
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
-  <div class="col-md-8">
+  
+  <!-- Panel derecho: resumen -->
+  <div class="col-lg-4">
     <div class="card">
-      <div class="card-header p-3 d-flex justify-content-between align-items-center">
-        <span><i class="fas fa-truck me-2 text-primary"></i>Lista de Proveedores</span>
-        <a href="{{ url_for('exportar_proveedores_excel') }}" class="btn btn-success btn-sm">
-          <i class="fas fa-file-excel me-1"></i>Exportar CSV
-        </a>
+      <div class="card-header p-3">
+        <i class="fas fa-receipt me-2 text-primary"></i>Resumen
       </div>
       <div class="card-body">
-        <table class="table align-middle">
-          <thead><tr><th>Nombre</th><th>Telefono</th><th>Correo</th><th>Direccion</th><th>Acciones</th></tr></thead>
-          <tbody>
-            {% for p in provs %}
-            <tr>
-              <td><strong>{{ p.nombre }}</strong></td>
-              <td>{{ p.telefono or '-' }}</td>
-              <td>{{ p.correo or '-' }}</td>
-              <td>{{ p.direccion or '-' }}</td>
-              <td>
-                <button class="btn btn-sm btn-outline-primary me-1"
-                        onclick="editarProv({{ p.id }}, '{{ p.nombre }}', '{{ p.telefono or '' }}', '{{ p.correo or '' }}', '{{ p.direccion or '' }}')">
-                  <i class="fas fa-edit"></i>
-                </button>
-                {% if current_user.rol == 'Administrador' %}
-                <form method="POST" action="{{ url_for('eliminar_proveedor', id=p.id) }}" style="display:inline;"
-                      onsubmit="return confirm('Eliminar {{ p.nombre }}?')">
-                  <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
-                </form>
-                {% endif %}
-              </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="4" class="text-center text-muted py-3">No hay proveedores</td></tr>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Cliente (opcional)</label>
+          <select id="clienteSelect" class="form-select form-select-sm">
+            <option value="">Cliente General</option>
+            {% for c in clientes %}
+            <option value="{{ c.id }}">{{ c.nombre }}</option>
             {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="editModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">Editar Proveedor</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form id="editForm" method="POST">
-        <div class="modal-body">
-          <div class="mb-2"><label class="form-label small fw-semibold">Nombre *</label>
-            <input type="text" name="nombre" id="eNombre" class="form-control form-control-sm" required></div>
-          <div class="mb-2"><label class="form-label small fw-semibold">Telefono</label>
-            <input type="text" name="telefono" id="eTel" class="form-control form-control-sm"></div>
-          <div class="mb-2"><label class="form-label small fw-semibold">Correo</label>
-            <input type="email" name="correo" id="eCorreo" class="form-control form-control-sm"></div>
-          <div class="mb-2"><label class="form-label small fw-semibold">Direccion</label>
-            <textarea name="direccion" id="eDir" class="form-control form-control-sm" rows="2"></textarea></div>
+          </select>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">M&eacute;todo de Pago</label>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary btn-sm flex-fill metodo-btn active" data-metodo="Efectivo" onclick="seleccionarMetodo('Efectivo')">
+              <i class="fas fa-money-bill me-1"></i>Efectivo
+            </button>
+            <button type="button" class="btn btn-outline-primary btn-sm flex-fill metodo-btn" data-metodo="Tarjeta" onclick="seleccionarMetodo('Tarjeta')">
+              <i class="fas fa-credit-card me-1"></i>Tarjeta
+            </button>
+            <button type="button" class="btn btn-outline-primary btn-sm flex-fill metodo-btn" data-metodo="Transferencia" onclick="seleccionarMetodo('Transferencia')">
+              <i class="fas fa-university me-1"></i>Transfer.
+            </button>
+          </div>
+          <input type="hidden" id="metodoPago" value="Efectivo">
         </div>
-      </form>
+        <div id="efectivoPanel" class="mb-3">
+          <label class="form-label fw-semibold small">Monto recibido (Q)</label>
+          <input type="number" id="montoRecibido" class="form-control form-control-sm" 
+                 value="0" min="0" step="0.01" oninput="calcularCambio()">
+          <div class="mt-2 p-2 rounded" style="background:#e8f5e9;" id="cambioPanel">
+            <div class="d-flex justify-content-between">
+              <span class="fw-semibold">Cambio:</span>
+              <strong class="text-success" id="cambioLabel">Q0.00</strong>
+            </div>
+          </div>
+        </div>
+          <input type="number" id="descuentoInput" class="form-control form-control-sm" 
+                 value="0" min="0" step="0.01" onchange="calcularTotal()">
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted">Subtotal</span>
+          <strong id="subtotalLabel">Q0.00</strong>
+        </div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted">Descuento</span>
+          <strong class="text-danger" id="descuentoLabel">-Q0.00</strong>
+        </div>
+        <div class="d-flex justify-content-between mb-3 fs-5">
+          <strong>Total</strong>
+          <strong class="text-primary" id="totalLabel">Q0.00</strong>
+        </div>
+        <button class="btn btn-success w-100 py-2 fw-bold" onclick="procesarVenta()">
+          <i class="fas fa-check-circle me-2"></i>Finalizar Venta
+        </button>
+        <button class="btn btn-outline-danger w-100 mt-2" onclick="limpiarCarrito()">
+          <i class="fas fa-trash me-1"></i>Limpiar
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -101,13 +133,159 @@
 
 {% block extra_js %}
 <script>
-function editarProv(id, nombre, tel, correo, dir) {
-  document.getElementById('eNombre').value = nombre;
-  document.getElementById('eTel').value = tel;
-  document.getElementById('eCorreo').value = correo;
-  document.getElementById('eDir').value = dir;
-  document.getElementById('editForm').action = `/proveedores/editar/${id}`;
-  new bootstrap.Modal(document.getElementById('editModal')).show();
+let carrito = [];
+
+document.getElementById('codigoBuscar').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') buscarProducto();
+});
+
+function seleccionarMetodo(metodo) {
+  document.getElementById('metodoPago').value = metodo;
+  document.querySelectorAll('.metodo-btn').forEach(b => b.classList.remove('active', 'btn-primary'));
+  document.querySelectorAll('.metodo-btn').forEach(b => b.classList.add('btn-outline-primary'));
+  const btn = document.querySelector(`[data-metodo="${metodo}"]`);
+  btn.classList.remove('btn-outline-primary');
+  btn.classList.add('btn-primary');
+  document.getElementById('efectivoPanel').style.display = metodo === 'Efectivo' ? 'block' : 'none';
+  calcularCambio();
+}
+
+function calcularCambio() {
+  const total = parseFloat(document.getElementById('totalLabel').textContent.replace('Q','')) || 0;
+  const recibido = parseFloat(document.getElementById('montoRecibido').value) || 0;
+  const cambio = Math.max(0, recibido - total);
+  document.getElementById('cambioLabel').textContent = `Q${cambio.toFixed(2)}`;
+  document.getElementById('cambioPanel').style.background = recibido >= total ? '#e8f5e9' : '#ffebee';
+}
+
+async function buscarProducto() {
+  const codigo = document.getElementById('codigoBuscar').value.trim();
+  const cantidad = parseInt(document.getElementById('cantidadInput').value) || 1;
+  if (!codigo) return;
+  
+  const res = await fetch(`/medicamentos/buscar_codigo?codigo=${encodeURIComponent(codigo)}`);
+  const data = await res.json();
+  
+  if (data.found) {
+    agregarAlCarrito(data, cantidad);
+    document.getElementById('codigoBuscar').value = '';
+    document.getElementById('cantidadInput').value = 1;
+    document.getElementById('resultadoBusqueda').innerHTML = '';
+    document.getElementById('codigoBuscar').focus();
+  } else {
+    document.getElementById('resultadoBusqueda').innerHTML = 
+      '<div class="alert alert-warning py-2 mt-2"><i class="fas fa-exclamation-triangle me-1"></i>Producto no encontrado</div>';
+  }
+}
+
+function agregarAlCarrito(prod, cantidad) {
+  const existente = carrito.find(i => i.id === prod.id);
+  if (existente) {
+    existente.cantidad += cantidad;
+  } else {
+    carrito.push({ id: prod.id, nombre: prod.nombre, precio: prod.precio, 
+                   stock: prod.stock, cantidad: cantidad });
+  }
+  renderCarrito();
+}
+
+function renderCarrito() {
+  const tbody = document.getElementById('carritoBody');
+  if (carrito.length === 0) {
+    tbody.innerHTML = `<tr id="carritoVacio">
+      <td colspan="5" class="text-center text-muted py-4">
+        <i class="fas fa-shopping-cart fa-2x mb-2 d-block opacity-25"></i>
+        Agrega productos escaneando o buscando
+      </td></tr>`;
+    calcularTotal();
+    return;
+  }
+  
+  tbody.innerHTML = carrito.map((item, idx) => `
+    <tr>
+      <td class="ps-3">
+        <div class="fw-semibold" style="font-size:.88rem;">${item.nombre}</div>
+        <small class="text-muted">Stock: ${item.stock}</small>
+      </td>
+      <td>Q${item.precio.toFixed(2)}</td>
+      <td style="width:100px;">
+        <input type="number" class="form-control form-control-sm" value="${item.cantidad}" 
+               min="1" max="${item.stock}" onchange="cambiarCantidad(${idx}, this.value)">
+      </td>
+      <td><strong>Q${(item.precio * item.cantidad).toFixed(2)}</strong></td>
+      <td>
+        <button class="btn btn-sm btn-outline-danger" onclick="eliminarItem(${idx})">
+          <i class="fas fa-times"></i>
+        </button>
+      </td>
+    </tr>
+  `).join('');
+  calcularTotal();
+}
+
+function cambiarCantidad(idx, val) {
+  carrito[idx].cantidad = parseInt(val) || 1;
+  renderCarrito();
+}
+
+function eliminarItem(idx) {
+  carrito.splice(idx, 1);
+  renderCarrito();
+}
+
+function limpiarCarrito() {
+  if (carrito.length && !confirm('Limpiar el carrito?')) return;
+  carrito = [];
+  renderCarrito();
+}
+
+function calcularTotal() {
+  const subtotal = carrito.reduce((s, i) => s + i.precio * i.cantidad, 0);
+  const descuento = parseFloat(document.getElementById('descuentoInput').value) || 0;
+  const total = Math.max(0, subtotal - descuento);
+  document.getElementById('subtotalLabel').textContent = `Q${subtotal.toFixed(2)}`;
+  document.getElementById('descuentoLabel').textContent = `-Q${descuento.toFixed(2)}`;
+  document.getElementById('totalLabel').textContent = `Q${total.toFixed(2)}`;
+}
+
+async function procesarVenta() {
+  if (carrito.length === 0) { alert('Agrega productos al carrito'); return; }
+  
+  const btn = document.querySelector('.btn-success');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+  
+  const payload = {
+    cliente_id: document.getElementById('clienteSelect').value || null,
+    descuento: parseFloat(document.getElementById('descuentoInput').value) || 0,
+    metodo_pago: document.getElementById('metodoPago').value,
+    monto_recibido: parseFloat(document.getElementById('montoRecibido').value) || 0,
+    items: carrito.map(i => ({ id: i.id, nombre: i.nombre, precio: i.precio, cantidad: i.cantidad }))
+  };
+  
+  try {
+    const res = await fetch('/ventas/nueva', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.success) {
+      // Abrir ticket en nueva ventana para imprimir
+      window.open(`/ventas/ticket/${data.venta_id}`, '_blank');
+      carrito = [];
+      renderCarrito();
+      document.getElementById('clienteSelect').value = '';
+      document.getElementById('descuentoInput').value = '0';
+    } else {
+      alert(data.error || 'Error al procesar la venta');
+    }
+  } catch(e) {
+    alert('Error de conexion');
+  }
+  
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Finalizar Venta';
 }
 </script>
 {% endblock %}
