@@ -187,6 +187,9 @@
   {% endif %}
   
   <div class="mt-auto p-3">
+    <a href="{{ url_for('cambiar_password') }}" class="sidebar-link mb-1" style="border-radius:8px;">
+      <i class="fas fa-key"></i> Cambiar Contrase&ntilde;a
+    </a>
     <a href="{{ url_for('logout') }}" class="sidebar-link" style="border-radius:8px;">
       <i class="fas fa-sign-out-alt"></i> Cerrar Sesi&oacute;n
     </a>
@@ -218,3 +221,4 @@
 {% block extra_js %}{% endblock %}
 </body>
 </html>
+
