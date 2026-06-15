@@ -20,15 +20,16 @@
       </div>
       <div class="col-md-2">
         <a href="{{ url_for('exportar_ventas_excel', desde=desde, hasta=hasta) }}" class="btn btn-success btn-sm w-100">
-          <i class="fas fa-file-excel me-1"></i>Exportar
+          <i class="fas fa-file-excel me-1"></i>Exportar CSV
         </a>
       </div>
     </form>
   </div>
 </div>
 
-<div class="row g-3 mb-4">
-  <div class="col-md-4">
+<!-- Totales generales -->
+<div class="row g-3 mb-3">
+  <div class="col-md-3">
     <div class="stat-card">
       <div class="stat-icon" style="background:#e3f2fd;color:#1565C0;"><i class="fas fa-dollar-sign"></i></div>
       <div>
@@ -37,21 +38,59 @@
       </div>
     </div>
   </div>
-  <div class="col-md-4">
+  <div class="col-md-3">
     <div class="stat-card">
-      <div class="stat-icon" style="background:#e8f5e9;color:#2e7d32;"><i class="fas fa-receipt"></i></div>
+      <div class="stat-icon" style="background:#e8f5e9;color:#2e7d32;"><i class="fas fa-money-bill"></i></div>
       <div>
-        <div class="stat-val">{{ total_transacciones }}</div>
-        <div class="stat-lbl">Transacciones</div>
+        <div class="stat-val">Q{{ "%.2f"|format(total_efectivo) }}</div>
+        <div class="stat-lbl">Efectivo</div>
       </div>
     </div>
   </div>
-  <div class="col-md-4">
+  <div class="col-md-3">
     <div class="stat-card">
-      <div class="stat-icon" style="background:#fff3e0;color:#e65100;"><i class="fas fa-chart-line"></i></div>
+      <div class="stat-icon" style="background:#e8eaf6;color:#3949ab;"><i class="fas fa-credit-card"></i></div>
       <div>
-        <div class="stat-val">Q{{ "%.2f"|format(promedio) }}</div>
-        <div class="stat-lbl">Promedio por Venta</div>
+        <div class="stat-val">Q{{ "%.2f"|format(total_tarjeta) }}</div>
+        <div class="stat-lbl">Tarjeta</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fff3e0;color:#e65100;"><i class="fas fa-university"></i></div>
+      <div>
+        <div class="stat-val">Q{{ "%.2f"|format(total_transferencia) }}</div>
+        <div class="stat-lbl">Transferencia</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Caja -->
+<div class="card mb-3" style="border-left: 4px solid #2e7d32;">
+  <div class="card-body py-3">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <i class="fas fa-cash-register me-2 text-success"></i>
+        <strong>Dinero en Caja (Efectivo)</strong>
+        <span class="text-muted ms-2" style="font-size:.85rem;">Fondo inicial + ventas en efectivo</span>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <div>
+          <span class="text-muted small">Fondo inicial: </span>
+          <strong>Q{{ "%.2f"|format(fondo_caja) }}</strong>
+        </div>
+        <div class="fs-4 fw-bold text-success">
+          Q{{ "%.2f"|format(fondo_caja + total_efectivo) }}
+        </div>
+        <form method="POST" action="{{ url_for('actualizar_fondo') }}" class="d-flex gap-2 align-items-center">
+          <input type="hidden" name="desde" value="{{ desde }}">
+          <input type="hidden" name="hasta" value="{{ hasta }}">
+          <input type="number" name="fondo" class="form-control form-control-sm" style="width:100px;"
+                 value="{{ fondo_caja }}" step="0.01" min="0" placeholder="Fondo">
+          <button class="btn btn-outline-success btn-sm">Actualizar</button>
+        </form>
       </div>
     </div>
   </div>
@@ -81,7 +120,7 @@
               <td><strong>Q{{ "%.2f"|format(v.total) }}</strong></td>
             </tr>
             {% else %}
-            <tr><td colspan="3" class="text-center text-muted py-3">Sin ventas en este periodo</td></tr>
+            <tr><td colspan="4" class="text-center text-muted py-3">Sin ventas en este periodo</td></tr>
             {% endfor %}
           </tbody>
         </table>
