@@ -328,9 +328,22 @@ def eliminar_cliente(id):
 @app.route('/ventas')
 @login_required
 def ventas():
+    buscar = request.args.get('buscar', '')
+    desde = request.args.get('desde', '')
+    hasta = request.args.get('hasta', '')
+    query = Venta.query
+    if buscar:
+        query = query.join(Cliente, isouter=True).filter(
+            db.or_(Venta.numero.ilike(f'%{buscar}%'),
+                   Cliente.nombre.ilike(f'%{buscar}%'))
+        )
+    if desde:
+        query = query.filter(db.func.date(Venta.fecha) >= datetime.strptime(desde, '%Y-%m-%d').date())
+    if hasta:
+        query = query.filter(db.func.date(Venta.fecha) <= datetime.strptime(hasta, '%Y-%m-%d').date())
     page = request.args.get('page', 1, type=int)
-    vs = Venta.query.order_by(Venta.fecha.desc()).paginate(page=page, per_page=10)
-    return render_template('ventas.html', vs=vs)
+    vs = query.order_by(Venta.fecha.desc()).paginate(page=page, per_page=10)
+    return render_template('ventas.html', vs=vs, buscar=buscar, desde=desde, hasta=hasta)
 
 @app.route('/ventas/nueva', methods=['GET', 'POST'])
 @login_required
@@ -474,6 +487,38 @@ def reporte_inventario():
     meds = Medicamento.query.all()
     valor_total = sum(m.stock * m.precio_venta for m in meds)
     return render_template('reporte_inventario.html', meds=meds, valor_total=valor_total)
+
+# ─── ERRORES ──────────────────────────────────────────────────────────────────
+
+@app.errorhandler(404)
+def not_found(e):
+    return render_template('404.html'), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    return render_template('500.html'), 500
+
+# ─── CAMBIAR PASSWORD ─────────────────────────────────────────────────────────
+
+@app.route('/cambiar-password', methods=['GET', 'POST'])
+@login_required
+def cambiar_password():
+    if request.method == 'POST':
+        actual = request.form['password_actual']
+        nueva = request.form['password_nueva']
+        confirmar = request.form['password_confirmar']
+        if not check_password_hash(current_user.password, actual):
+            flash('La contrasena actual es incorrecta', 'danger')
+        elif nueva != confirmar:
+            flash('Las contrasenas nuevas no coinciden', 'danger')
+        elif len(nueva) < 6:
+            flash('La contrasena debe tener al menos 6 caracteres', 'danger')
+        else:
+            current_user.password = generate_password_hash(nueva)
+            db.session.commit()
+            flash('Contrasena cambiada correctamente', 'success')
+            return redirect(url_for('dashboard'))
+    return render_template('cambiar_password.html')
 
 # ─── EXPORTAR EXCEL ───────────────────────────────────────────────────────────
 
