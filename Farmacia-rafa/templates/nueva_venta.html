@@ -158,7 +158,7 @@ function calcularCambio() {
   document.getElementById('cambioPanel').style.background = recibido >= total ? '#e8f5e9' : '#ffebee';
 }
 
-
+async function buscarProducto() {
   const codigo = document.getElementById('codigoBuscar').value.trim();
   const cantidad = parseInt(document.getElementById('cantidadInput').value) || 1;
   if (!codigo) return;
@@ -290,3 +290,5 @@ async function procesarVenta() {
 </script>
 {% endblock %}
 
+  
+      
