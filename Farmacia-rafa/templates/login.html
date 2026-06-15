@@ -1,24 +1,81 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="es">
 <head>
-
-<title>Farmacia Rafa&aacute;</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farmacia Rafa - Iniciar Sesion</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+  body {
+    background: linear-gradient(135deg, #0D47A1 0%, #1565C0 50%, #1976D2 100%);
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Segoe UI', sans-serif;
+  }
+  .login-box {
+    background: white;
+    border-radius: 20px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .brand {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .brand-icon {
+    width: 72px; height: 72px;
+    background: #1565C0;
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 2rem; color: white; font-weight: 900;
+  }
+  .brand h2 { font-weight: 800; color: #0D47A1; margin: 0; font-size: 1.6rem; }
+  .brand p { color: #888; font-size: 0.85rem; margin: 4px 0 0; }
+  .form-label { font-weight: 600; font-size: 0.85rem; color: #333; }
+  .form-control { border-radius: 10px; padding: 12px 16px; border: 1.5px solid #e0e0e0; }
+  .form-control:focus { border-color: #1565C0; box-shadow: 0 0 0 3px rgba(21,101,192,0.15); }
+  .btn-login {
+    background: #1565C0; color: white; border: none;
+    border-radius: 10px; padding: 13px; font-weight: 700;
+    width: 100%; font-size: 1rem; transition: all 0.2s;
+  }
+  .btn-login:hover { background: #0D47A1; transform: translateY(-1px); }
+  .copy { text-align: center; color: #aaa; font-size: 0.75rem; margin-top: 24px; }
+</style>
 </head>
-
 <body>
-
-<h1>Farmacia Rafa&aacute;</h1>
-
-<h3>Página de inicio de sesión</h3>
-
-<a href="/dashboard">
-
-Entrar al sistema
-
-</a>
-
+<div class="login-box">
+  <div class="brand">
+    <div class="brand-icon">+</div>
+    <h2>Farmacia Raf&aacute;</h2>
+    <p>Sistema de Gesti&oacute;n</p>
+  </div>
+  
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="alert alert-{{ cat }} mb-3" role="alert">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+  
+  <form method="POST">
+    <div class="mb-3">
+      <label class="form-label">Correo electr&oacute;nico</label>
+      <input type="email" name="correo" class="form-control" placeholder="correo@ejemplo.com" required autofocus>
+    </div>
+    <div class="mb-4">
+      <label class="form-label">Contrase&ntilde;a</label>
+      <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+    </div>
+    <button type="submit" class="btn-login">
+      <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesi&oacute;n
+    </button>
+  </form>
+  <div class="copy">&copy; 2024 Farmacia Raf&aacute;</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-
 </html>
