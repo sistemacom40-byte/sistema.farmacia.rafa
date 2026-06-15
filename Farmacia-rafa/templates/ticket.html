@@ -69,6 +69,11 @@
 <div class="row"><span>Descuento:</span><span>-Q{{ "%.2f"|format(venta.descuento) }}</span></div>
 {% endif %}
 <div class="row bold" style="font-size:14px;"><span>TOTAL:</span><span>Q{{ "%.2f"|format(venta.total) }}</span></div>
+<div class="row"><span>Pago:</span><span>{{ venta.metodo_pago }}</span></div>
+{% if venta.metodo_pago == 'Efectivo' %}
+<div class="row"><span>Recibido:</span><span>Q{{ "%.2f"|format(venta.monto_recibido) }}</span></div>
+<div class="row bold"><span>Cambio:</span><span>Q{{ "%.2f"|format(venta.cambio) }}</span></div>
+{% endif %}
 
 <div class="line"></div>
 <div class="gracias">
@@ -92,3 +97,4 @@
 </script>
 </body>
 </html>
+
