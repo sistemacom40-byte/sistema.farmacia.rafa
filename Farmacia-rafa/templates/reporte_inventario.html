@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Reporte Inventario{% endblock %}
+{% block page_title %}Reporte de Inventario{% endblock %}
+
+{% block content %}
+<div class="card mb-3">
+  <div class="card-header p-3 d-flex justify-content-between align-items-center">
+    <span><i class="fas fa-boxes me-2 text-primary"></i>Estado del Inventario</span>
+    <span class="badge bg-primary fs-6">Valor Total: Q{{ "%.2f"|format(valor_total) }}</span>
+  </div>
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead>
+          <tr>
+            <th>Codigo</th>
+            <th>Nombre</th>
+            <th>Categoria</th>
+            <th>Stock</th>
+            <th>Precio Venta</th>
+            <th>Valor Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in meds %}
+          <tr class="{{ 'table-warning' if m.stock <= m.stock_minimo else '' }}">
+            <td><code>{{ m.codigo }}</code></td>
+            <td>{{ m.nombre }}</td>
+            <td>{{ m.categoria.nombre if m.categoria else '-' }}</td>
+            <td class="{{ 'stock-bajo' if m.stock <= m.stock_minimo else '' }}">
+              {{ m.stock }}
+              {% if m.stock <= m.stock_minimo %}
+              <span class="badge bg-danger ms-1" style="font-size:.65rem;">Stock bajo</span>
+              {% endif %}
+            </td>
+            <td>Q{{ "%.2f"|format(m.precio_venta) }}</td>
+            <td><strong>Q{{ "%.2f"|format(m.stock * m.precio_venta) }}</strong></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="6" class="text-center text-muted py-4">No hay medicamentos registrados</td></tr>
+          {% endfor %}
+        </tbody>
+        {% if meds %}
+        <tfoot>
+          <tr class="table-primary">
+            <td colspan="5" class="fw-bold text-end">VALOR TOTAL DEL INVENTARIO:</td>
+            <td class="fw-bold fs-5">Q{{ "%.2f"|format(valor_total) }}</td>
+          </tr>
+        </tfoot>
+        {% endif %}
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
