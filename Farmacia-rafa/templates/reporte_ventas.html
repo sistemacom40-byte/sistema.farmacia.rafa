@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Reporte de Ventas{% endblock %}
+{% block page_title %}Reporte de Ventas Diarias{% endblock %}
+{% block extra_css %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+
+{% block content %}
+<div class="card mb-3">
+  <div class="card-body">
+    <form class="row g-2 align-items-end" method="GET">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Desde</label>
+        <input type="date" name="desde" class="form-control form-control-sm" value="{{ desde }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Hasta</label>
+        <input type="date" name="hasta" class="form-control form-control-sm" value="{{ hasta }}">
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-primary btn-sm w-100"><i class="fas fa-filter me-1"></i>Filtrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e3f2fd;color:#1565C0;"><i class="fas fa-dollar-sign"></i></div>
+      <div>
+        <div class="stat-val">Q{{ "%.2f"|format(total_ventas) }}</div>
+        <div class="stat-lbl">Total Vendido</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e8f5e9;color:#2e7d32;"><i class="fas fa-receipt"></i></div>
+      <div>
+        <div class="stat-val">{{ total_transacciones }}</div>
+        <div class="stat-lbl">Transacciones</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fff3e0;color:#e65100;"><i class="fas fa-chart-line"></i></div>
+      <div>
+        <div class="stat-val">Q{{ "%.2f"|format(promedio) }}</div>
+        <div class="stat-lbl">Promedio por Venta</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header p-3"><i class="fas fa-chart-bar me-2 text-primary"></i>Ventas por Dia</div>
+      <div class="card-body">
+        <canvas id="chartVentas" height="120"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card">
+      <div class="card-header p-3"><i class="fas fa-list me-2 text-primary"></i>Detalle de Ventas</div>
+      <div class="card-body p-0" style="max-height:320px;overflow-y:auto;">
+        <table class="table table-sm align-middle mb-0">
+          <thead><tr><th class="ps-3">Factura</th><th>Fecha</th><th>Total</th></tr></thead>
+          <tbody>
+            {% for v in vs %}
+            <tr>
+              <td class="ps-3"><a href="{{ url_for('ticket_venta', id=v.id) }}" target="_blank"><code>{{ v.numero }}</code></a></td>
+              <td>{{ v.fecha.strftime('%d/%m %H:%M') }}</td>
+              <td><strong>Q{{ "%.2f"|format(v.total) }}</strong></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="text-center text-muted py-3">Sin ventas en este periodo</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const labels = [{% for k,v in por_dia.items() %}'{{ k }}'{% if not loop.last %},{% endif %}{% endfor %}];
+const data = [{% for k,v in por_dia.items() %}{{ v }}{% if not loop.last %},{% endif %}{% endfor %}];
+new Chart(document.getElementById('chartVentas'), {
+  type: 'bar',
+  data: { labels, datasets: [{ label: 'Q', data, backgroundColor: 'rgba(21,101,192,0.8)', borderRadius: 4 }] },
+  options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+});
+</script>
+{% endblock %}
