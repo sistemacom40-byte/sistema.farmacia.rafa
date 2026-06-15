@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% block title %}Proveedores{% endblock %}
+{% block page_title %}Proveedores{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card">
+      <div class="card-header p-3"><i class="fas fa-plus me-2 text-primary"></i>Nuevo Proveedor</div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('nuevo_proveedor') }}">
+          <div class="mb-2">
+            <label class="form-label fw-semibold small">Nombre *</label>
+            <input type="text" name="nombre" class="form-control form-control-sm" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label fw-semibold small">Telefono</label>
+            <input type="text" name="telefono" class="form-control form-control-sm">
+          </div>
+          <div class="mb-2">
+            <label class="form-label fw-semibold small">Correo</label>
+            <input type="email" name="correo" class="form-control form-control-sm">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Direccion</label>
+            <textarea name="direccion" class="form-control form-control-sm" rows="2"></textarea>
+          </div>
+          <button class="btn btn-primary btn-sm w-100"><i class="fas fa-save me-1"></i>Guardar</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card">
+      <div class="card-header p-3"><i class="fas fa-truck me-2 text-primary"></i>Lista de Proveedores</div>
+      <div class="card-body">
+        <table class="table align-middle">
+          <thead><tr><th>Nombre</th><th>Telefono</th><th>Correo</th><th>Acciones</th></tr></thead>
+          <tbody>
+            {% for p in provs %}
+            <tr>
+              <td><strong>{{ p.nombre }}</strong></td>
+              <td>{{ p.telefono or '-' }}</td>
+              <td>{{ p.correo or '-' }}</td>
+              <td>
+                <button class="btn btn-sm btn-outline-primary me-1"
+                        onclick="editarProv({{ p.id }}, '{{ p.nombre }}', '{{ p.telefono or '' }}', '{{ p.correo or '' }}', '{{ p.direccion or '' }}')">
+                  <i class="fas fa-edit"></i>
+                </button>
+                {% if current_user.rol == 'Administrador' %}
+                <form method="POST" action="{{ url_for('eliminar_proveedor', id=p.id) }}" style="display:inline;"
+                      onsubmit="return confirm('Eliminar {{ p.nombre }}?')">
+                  <button class="btn btn-sm btn-outline-danger"><i class="fas fa-trash"></i></button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="text-center text-muted py-3">No hay proveedores</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="editModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Editar Proveedor</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="editForm" method="POST">
+        <div class="modal-body">
+          <div class="mb-2"><label class="form-label small fw-semibold">Nombre *</label>
+            <input type="text" name="nombre" id="eNombre" class="form-control form-control-sm" required></div>
+          <div class="mb-2"><label class="form-label small fw-semibold">Telefono</label>
+            <input type="text" name="telefono" id="eTel" class="form-control form-control-sm"></div>
+          <div class="mb-2"><label class="form-label small fw-semibold">Correo</label>
+            <input type="email" name="correo" id="eCorreo" class="form-control form-control-sm"></div>
+          <div class="mb-2"><label class="form-label small fw-semibold">Direccion</label>
+            <textarea name="direccion" id="eDir" class="form-control form-control-sm" rows="2"></textarea></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function editarProv(id, nombre, tel, correo, dir) {
+  document.getElementById('eNombre').value = nombre;
+  document.getElementById('eTel').value = tel;
+  document.getElementById('eCorreo').value = correo;
+  document.getElementById('eDir').value = dir;
+  document.getElementById('editForm').action = `/proveedores/editar/${id}`;
+  new bootstrap.Modal(document.getElementById('editModal')).show();
+}
+</script>
+{% endblock %}
