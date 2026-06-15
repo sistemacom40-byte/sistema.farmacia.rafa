@@ -471,27 +471,47 @@ def reporte_ventas():
     total_ventas = sum(v.total for v in vs)
     total_transacciones = len(vs)
     promedio = total_ventas / total_transacciones if total_transacciones else 0
+    total_efectivo = sum(v.total for v in vs if v.metodo_pago == 'Efectivo')
+    total_tarjeta = sum(v.total for v in vs if v.metodo_pago == 'Tarjeta')
+    total_transferencia = sum(v.total for v in vs if v.metodo_pago == 'Transferencia')
     
-    # Agrupar por dia
+    # Fondo de caja desde sesion o variable
+    fondo_caja = float(request.args.get('fondo', 0))
+    
     por_dia = {}
     for v in vs:
         key = v.fecha.strftime('%d/%m')
-        if key not in por_dia:
-            por_dia[key] = 0
-        por_dia[key] += v.total
+        por_dia[key] = por_dia.get(key, 0) + v.total
     
     return render_template('reporte_ventas.html',
         vs=vs, desde=desde, hasta=hasta,
         total_ventas=total_ventas, total_transacciones=total_transacciones,
-        promedio=promedio, por_dia=por_dia
+        promedio=promedio, por_dia=por_dia,
+        total_efectivo=total_efectivo, total_tarjeta=total_tarjeta,
+        total_transferencia=total_transferencia,
+        fondo_caja=fondo_caja
     )
+
+@app.route('/reportes/fondo', methods=['POST'])
+@login_required
+def actualizar_fondo():
+    fondo = request.form.get('fondo', 0)
+    desde = request.form.get('desde', date.today().strftime('%Y-%m-%d'))
+    hasta = request.form.get('hasta', date.today().strftime('%Y-%m-%d'))
+    return redirect(url_for('reporte_ventas', desde=desde, hasta=hasta, fondo=fondo))
 
 @app.route('/reportes/inventario')
 @login_required
 def reporte_inventario():
-    meds = Medicamento.query.all()
+    buscar = request.args.get('buscar', '')
+    query = Medicamento.query
+    if buscar:
+        query = query.filter(
+            db.or_(Medicamento.nombre.ilike(f'%{buscar}%'), Medicamento.codigo.ilike(f'%{buscar}%'))
+        )
+    meds = query.all()
     valor_total = sum(m.stock * m.precio_venta for m in meds)
-    return render_template('reporte_inventario.html', meds=meds, valor_total=valor_total)
+    return render_template('reporte_inventario.html', meds=meds, valor_total=valor_total, buscar=buscar)
 
 # ─── ERRORES ──────────────────────────────────────────────────────────────────
 
@@ -542,42 +562,126 @@ def exportar_ventas_excel():
     import csv, io
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['Numero', 'Fecha', 'Cliente', 'Cajero', 'Subtotal', 'Descuento', 'Total'])
-    for v in vs:
+    
+    # Encabezado del reporte
+    writer.writerow(['FARMACIA RAFA - REPORTE DE VENTAS'])
+    writer.writerow([f'Periodo: {desde} al {hasta}'])
+    writer.writerow([f'Generado: {datetime.now().strftime("%d/%m/%Y %H:%M")}'])
+    writer.writerow([])
+    
+    # Resumen por metodo de pago
+    total_efectivo = sum(v.total for v in vs if v.metodo_pago == 'Efectivo')
+    total_tarjeta = sum(v.total for v in vs if v.metodo_pago == 'Tarjeta')
+    total_transferencia = sum(v.total for v in vs if v.metodo_pago == 'Transferencia')
+    writer.writerow(['RESUMEN POR METODO DE PAGO'])
+    writer.writerow(['Efectivo', f'Q{total_efectivo:.2f}'])
+    writer.writerow(['Tarjeta', f'Q{total_tarjeta:.2f}'])
+    writer.writerow(['Transferencia', f'Q{total_transferencia:.2f}'])
+    writer.writerow(['TOTAL GENERAL', f'Q{sum(v.total for v in vs):.2f}'])
+    writer.writerow([])
+    
+    # Detalle de ventas
+    writer.writerow(['DETALLE DE VENTAS'])
+    writer.writerow(['No.', 'Numero Factura', 'Fecha', 'Hora', 'Cliente', 'Cajero', 
+                     'Metodo Pago', 'Subtotal', 'Descuento', 'Total', 'Monto Recibido', 'Cambio'])
+    for i, v in enumerate(vs, 1):
         writer.writerow([
+            i,
             v.numero,
-            v.fecha.strftime('%d/%m/%Y %H:%M'),
-            v.cliente.nombre if v.cliente else 'General',
+            v.fecha.strftime('%d/%m/%Y'),
+            v.fecha.strftime('%H:%M'),
+            v.cliente.nombre if v.cliente else 'Cliente General',
             v.usuario.nombre,
-            v.subtotal, v.descuento, v.total
+            v.metodo_pago,
+            f'Q{v.subtotal:.2f}',
+            f'Q{v.descuento:.2f}',
+            f'Q{v.total:.2f}',
+            f'Q{v.monto_recibido:.2f}',
+            f'Q{v.cambio:.2f}'
         ])
+    
     output.seek(0)
     response = make_response(output.getvalue())
     response.headers['Content-Disposition'] = f'attachment; filename=ventas_{desde}_{hasta}.csv'
-    response.headers['Content-type'] = 'text/csv'
+    response.headers['Content-type'] = 'text/csv; charset=utf-8'
     return response
 
 @app.route('/reportes/inventario/excel')
 @login_required
 def exportar_inventario_excel():
-    meds = Medicamento.query.all()
+    buscar = request.args.get('buscar', '')
+    query = Medicamento.query
+    if buscar:
+        query = query.filter(
+            db.or_(Medicamento.nombre.ilike(f'%{buscar}%'), Medicamento.codigo.ilike(f'%{buscar}%'))
+        )
+    meds = query.all()
+    
     import csv, io
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['Codigo', 'Nombre', 'Categoria', 'Proveedor', 'Stock', 'Precio Venta', 'Valor Total'])
-    for m in meds:
+    
+    writer.writerow(['FARMACIA RAFA - REPORTE DE INVENTARIO'])
+    writer.writerow([f'Generado: {datetime.now().strftime("%d/%m/%Y %H:%M")}'])
+    writer.writerow([])
+    
+    valor_total = sum(m.stock * m.precio_venta for m in meds)
+    total_bajo = sum(1 for m in meds if m.stock <= m.stock_minimo)
+    writer.writerow(['Total de productos', len(meds)])
+    writer.writerow(['Productos con stock bajo', total_bajo])
+    writer.writerow(['Valor total del inventario', f'Q{valor_total:.2f}'])
+    writer.writerow([])
+    
+    writer.writerow(['No.', 'Codigo', 'Nombre', 'Categoria', 'Proveedor', 
+                     'Stock Actual', 'Stock Minimo', 'Estado Stock',
+                     'Precio Compra', 'Precio Venta', 'Valor Total', 'Vencimiento'])
+    for i, m in enumerate(meds, 1):
+        estado = 'Stock Bajo' if m.stock <= m.stock_minimo else 'OK'
         writer.writerow([
-            m.codigo, m.nombre,
+            i,
+            m.codigo,
+            m.nombre,
             m.categoria.nombre if m.categoria else '',
             m.proveedor.nombre if m.proveedor else '',
-            m.stock, m.precio_venta,
-            m.stock * m.precio_venta
+            m.stock,
+            m.stock_minimo,
+            estado,
+            f'Q{m.precio_compra:.2f}',
+            f'Q{m.precio_venta:.2f}',
+            f'Q{m.stock * m.precio_venta:.2f}',
+            m.fecha_vencimiento.strftime('%d/%m/%Y') if m.fecha_vencimiento else ''
         ])
+    
     output.seek(0)
     response = make_response(output.getvalue())
     response.headers['Content-Disposition'] = 'attachment; filename=inventario.csv'
-    response.headers['Content-type'] = 'text/csv'
+    response.headers['Content-type'] = 'text/csv; charset=utf-8'
+    return response
+
+@app.route('/reportes/proveedores/excel')
+@login_required
+def exportar_proveedores_excel():
+    provs = Proveedor.query.all()
+    import csv, io
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    writer.writerow(['FARMACIA RAFA - REPORTE DE PROVEEDORES'])
+    writer.writerow([f'Generado: {datetime.now().strftime("%d/%m/%Y %H:%M")}'])
+    writer.writerow([f'Total de proveedores: {len(provs)}'])
+    writer.writerow([])
+    writer.writerow(['No.', 'Nombre', 'Telefono', 'Correo', 'Direccion', 'Medicamentos'])
+    for i, p in enumerate(provs, 1):
+        writer.writerow([i, p.nombre, p.telefono or '', p.correo or '', 
+                         p.direccion or '', len(p.medicamentos)])
+    
+    output.seek(0)
+    response = make_response(output.getvalue())
+    response.headers['Content-Disposition'] = 'attachment; filename=proveedores.csv'
+    response.headers['Content-type'] = 'text/csv; charset=utf-8'
     return response
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
+
+     
