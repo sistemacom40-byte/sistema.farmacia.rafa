@@ -19,12 +19,14 @@
   #sidebar {
     width: var(--sidebar-w);
     min-height: 100vh;
+    height: 100vh;
     background: var(--azul-dark);
     position: fixed;
     top: 0; left: 0;
     z-index: 100;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
   }
   .sidebar-brand {
     background: var(--azul);
@@ -221,4 +223,3 @@
 {% block extra_js %}{% endblock %}
 </body>
 </html>
-
