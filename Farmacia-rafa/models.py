@@ -61,6 +61,9 @@ class Venta(db.Model):
     subtotal = db.Column(db.Float, default=0)
     descuento = db.Column(db.Float, default=0)
     total = db.Column(db.Float, default=0)
+    metodo_pago = db.Column(db.String(20), default='Efectivo')  # Efectivo, Tarjeta, Transferencia
+    monto_recibido = db.Column(db.Float, default=0)
+    cambio = db.Column(db.Float, default=0)
     detalles = db.relationship('DetalleVenta', backref='venta', lazy=True)
     usuario = db.relationship('Usuario', backref='ventas')
 
