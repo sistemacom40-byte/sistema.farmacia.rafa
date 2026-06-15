@@ -353,6 +353,8 @@ def nueva_venta():
         cliente_id = data.get('cliente_id') or None
         items = data.get('items', [])
         descuento = float(data.get('descuento', 0))
+        metodo_pago = data.get('metodo_pago', 'Efectivo')
+        monto_recibido = float(data.get('monto_recibido', 0))
         
         if not items:
             return jsonify({'error': 'No hay productos en la venta'}), 400
@@ -370,7 +372,10 @@ def nueva_venta():
             usuario_id=current_user.id,
             subtotal=subtotal,
             descuento=descuento,
-            total=total
+            total=total,
+            metodo_pago=metodo_pago,
+            monto_recibido=monto_recibido if metodo_pago == 'Efectivo' else total,
+            cambio=max(0, monto_recibido - total) if metodo_pago == 'Efectivo' else 0
         )
         db.session.add(venta)
         db.session.flush()
