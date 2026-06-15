@@ -71,12 +71,13 @@
       <div class="card-header p-3"><i class="fas fa-list me-2 text-primary"></i>Detalle de Ventas</div>
       <div class="card-body p-0" style="max-height:320px;overflow-y:auto;">
         <table class="table table-sm align-middle mb-0">
-          <thead><tr><th class="ps-3">Factura</th><th>Fecha</th><th>Total</th></tr></thead>
+          <thead><tr><th class="ps-3">Factura</th><th>Fecha</th><th>Pago</th><th>Total</th></tr></thead>
           <tbody>
             {% for v in vs %}
             <tr>
               <td class="ps-3"><a href="{{ url_for('ticket_venta', id=v.id) }}" target="_blank"><code>{{ v.numero }}</code></a></td>
               <td>{{ v.fecha.strftime('%d/%m %H:%M') }}</td>
+              <td><span class="badge {% if v.metodo_pago=='Efectivo' %}bg-success{% elif v.metodo_pago=='Tarjeta' %}bg-primary{% else %}bg-warning text-dark{% endif %}">{{ v.metodo_pago }}</span></td>
               <td><strong>Q{{ "%.2f"|format(v.total) }}</strong></td>
             </tr>
             {% else %}
