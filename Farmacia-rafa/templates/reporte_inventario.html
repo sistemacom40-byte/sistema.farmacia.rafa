@@ -14,6 +14,20 @@
     </div>
   </div>
   <div class="card-body">
+    <form class="row g-2 mb-3" method="GET">
+      <div class="col-md-5">
+        <input type="text" name="buscar" class="form-control form-control-sm"
+               placeholder="Buscar medicamento..." value="{{ buscar }}">
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-outline-primary btn-sm w-100"><i class="fas fa-search me-1"></i>Buscar</button>
+      </div>
+      {% if buscar %}
+      <div class="col-md-2">
+        <a href="{{ url_for('reporte_inventario') }}" class="btn btn-outline-secondary btn-sm w-100">Limpiar</a>
+      </div>
+      {% endif %}
+    </form>
     <div class="table-responsive">
       <table class="table table-hover align-middle">
         <thead>
@@ -21,9 +35,12 @@
             <th>Codigo</th>
             <th>Nombre</th>
             <th>Categoria</th>
+            <th>Proveedor</th>
             <th>Stock</th>
-            <th>Precio Venta</th>
+            <th>P. Compra</th>
+            <th>P. Venta</th>
             <th>Valor Total</th>
+            <th>Vencimiento</th>
           </tr>
         </thead>
         <tbody>
@@ -32,24 +49,28 @@
             <td><code>{{ m.codigo }}</code></td>
             <td>{{ m.nombre }}</td>
             <td>{{ m.categoria.nombre if m.categoria else '-' }}</td>
+            <td>{{ m.proveedor.nombre if m.proveedor else '-' }}</td>
             <td class="{{ 'stock-bajo' if m.stock <= m.stock_minimo else '' }}">
               {{ m.stock }}
               {% if m.stock <= m.stock_minimo %}
               <span class="badge bg-danger ms-1" style="font-size:.65rem;">Stock bajo</span>
               {% endif %}
             </td>
+            <td>Q{{ "%.2f"|format(m.precio_compra) }}</td>
             <td>Q{{ "%.2f"|format(m.precio_venta) }}</td>
             <td><strong>Q{{ "%.2f"|format(m.stock * m.precio_venta) }}</strong></td>
+            <td>{{ m.fecha_vencimiento.strftime('%d/%m/%Y') if m.fecha_vencimiento else '-' }}</td>
           </tr>
           {% else %}
-          <tr><td colspan="6" class="text-center text-muted py-4">No hay medicamentos registrados</td></tr>
+          <tr><td colspan="9" class="text-center text-muted py-4">No se encontraron medicamentos</td></tr>
           {% endfor %}
         </tbody>
         {% if meds %}
         <tfoot>
           <tr class="table-primary">
-            <td colspan="5" class="fw-bold text-end">VALOR TOTAL DEL INVENTARIO:</td>
+            <td colspan="7" class="fw-bold text-end">VALOR TOTAL DEL INVENTARIO:</td>
             <td class="fw-bold fs-5">Q{{ "%.2f"|format(valor_total) }}</td>
+            <td></td>
           </tr>
         </tfoot>
         {% endif %}
