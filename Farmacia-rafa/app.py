@@ -475,5 +475,59 @@ def reporte_inventario():
     valor_total = sum(m.stock * m.precio_venta for m in meds)
     return render_template('reporte_inventario.html', meds=meds, valor_total=valor_total)
 
+# ─── EXPORTAR EXCEL ───────────────────────────────────────────────────────────
+
+@app.route('/reportes/ventas/excel')
+@login_required
+def exportar_ventas_excel():
+    desde = request.args.get('desde', date.today().strftime('%Y-%m-%d'))
+    hasta = request.args.get('hasta', date.today().strftime('%Y-%m-%d'))
+    d = datetime.strptime(desde, '%Y-%m-%d').date()
+    h = datetime.strptime(hasta, '%Y-%m-%d').date()
+    vs = Venta.query.filter(
+        db.func.date(Venta.fecha) >= d,
+        db.func.date(Venta.fecha) <= h
+    ).order_by(Venta.fecha.desc()).all()
+
+    import csv, io
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Numero', 'Fecha', 'Cliente', 'Cajero', 'Subtotal', 'Descuento', 'Total'])
+    for v in vs:
+        writer.writerow([
+            v.numero,
+            v.fecha.strftime('%d/%m/%Y %H:%M'),
+            v.cliente.nombre if v.cliente else 'General',
+            v.usuario.nombre,
+            v.subtotal, v.descuento, v.total
+        ])
+    output.seek(0)
+    response = make_response(output.getvalue())
+    response.headers['Content-Disposition'] = f'attachment; filename=ventas_{desde}_{hasta}.csv'
+    response.headers['Content-type'] = 'text/csv'
+    return response
+
+@app.route('/reportes/inventario/excel')
+@login_required
+def exportar_inventario_excel():
+    meds = Medicamento.query.all()
+    import csv, io
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Codigo', 'Nombre', 'Categoria', 'Proveedor', 'Stock', 'Precio Venta', 'Valor Total'])
+    for m in meds:
+        writer.writerow([
+            m.codigo, m.nombre,
+            m.categoria.nombre if m.categoria else '',
+            m.proveedor.nombre if m.proveedor else '',
+            m.stock, m.precio_venta,
+            m.stock * m.precio_venta
+        ])
+    output.seek(0)
+    response = make_response(output.getvalue())
+    response.headers['Content-Disposition'] = 'attachment; filename=inventario.csv'
+    response.headers['Content-type'] = 'text/csv'
+    return response
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
