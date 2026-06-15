@@ -1,20 +1,123 @@
-<!DOCTYPE html>
-<html>
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
 
-<head>
+{% block content %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e3f2fd;color:#1565C0;"><i class="fas fa-pills"></i></div>
+      <div>
+        <div class="stat-val">{{ total_meds }}</div>
+        <div class="stat-lbl">Total Medicamentos</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e8f5e9;color:#2e7d32;"><i class="fas fa-users"></i></div>
+      <div>
+        <div class="stat-val">{{ total_clientes }}</div>
+        <div class="stat-lbl">Clientes</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fff3e0;color:#e65100;"><i class="fas fa-truck"></i></div>
+      <div>
+        <div class="stat-val">{{ total_proveedores }}</div>
+        <div class="stat-lbl">Proveedores</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#f3e5f5;color:#7b1fa2;"><i class="fas fa-cash-register"></i></div>
+      <div>
+        <div class="stat-val">Q{{ "%.2f"|format(ventas_hoy) }}</div>
+        <div class="stat-lbl">Ventas Hoy</div>
+      </div>
+    </div>
+  </div>
+</div>
 
-<title>Dashboard</title>
+<div class="row g-3 mb-4">
+  {% if stock_bajo %}
+  <div class="col-12">
+    <div class="alert-danger-light">
+      <i class="fas fa-exclamation-triangle me-2"></i>
+      <strong>Stock bajo:</strong>
+      {% for m in stock_bajo[:5] %}{{ m.nombre }} ({{ m.stock }}){% if not loop.last %}, {% endif %}{% endfor %}
+      {% if stock_bajo|length > 5 %} y {{ stock_bajo|length - 5 }} m&aacute;s...{% endif %}
+    </div>
+  </div>
+  {% endif %}
+  {% if proximos_vencer %}
+  <div class="col-12">
+    <div class="alert-warning-light">
+      <i class="fas fa-clock me-2"></i>
+      <strong>Pr&oacute;ximos a vencer (30 d&iacute;as):</strong>
+      {% for m in proximos_vencer[:5] %}{{ m.nombre }}{% if not loop.last %}, {% endif %}{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
 
-</head>
+<div class="row g-3">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header p-3">
+        <i class="fas fa-chart-line me-2 text-primary"></i>Ventas &uacute;ltimos 7 d&iacute;as
+      </div>
+      <div class="card-body">
+        <canvas id="chartVentas" height="100"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card h-100">
+      <div class="card-header p-3">
+        <i class="fas fa-bolt me-2 text-warning"></i>Acciones R&aacute;pidas
+      </div>
+      <div class="card-body d-flex flex-column gap-2">
+        <a href="{{ url_for('nueva_venta') }}" class="btn btn-primary w-100">
+          <i class="fas fa-cash-register me-2"></i>Nueva Venta
+        </a>
+        <a href="{{ url_for('nuevo_medicamento') }}" class="btn btn-outline-primary w-100">
+          <i class="fas fa-plus me-2"></i>Agregar Medicamento
+        </a>
+        <a href="{{ url_for('nuevo_cliente') if false else url_for('clientes') }}" class="btn btn-outline-secondary w-100">
+          <i class="fas fa-user-plus me-2"></i>Nuevo Cliente
+        </a>
+        <a href="{{ url_for('reporte_ventas') }}" class="btn btn-outline-success w-100">
+          <i class="fas fa-chart-bar me-2"></i>Ver Reportes
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
 
-<body>
-
-<h1>Panel Principal</h1>
-
-<h2>Farmacia Rafa&aacute;</h2>
-
-<p>Sistema funcionando correctamente.</p>
-
-</body>
-
-</html>
+{% block extra_js %}
+<script>
+const labels = [{% for v in ventas_semana %}'{{ v.fecha }}'{% if not loop.last %},{% endif %}{% endfor %}];
+const data = [{% for v in ventas_semana %}{{ v.total }}{% if not loop.last %},{% endif %}{% endfor %}];
+new Chart(document.getElementById('chartVentas'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [{
+      label: 'Ventas (Q)',
+      data,
+      backgroundColor: 'rgba(21,101,192,0.8)',
+      borderRadius: 6
+    }]
+  },
+  options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+});
+</script>
+{% endblock %}
