@@ -78,7 +78,31 @@
           </select>
         </div>
         <div class="mb-3">
-          <label class="form-label fw-semibold small">Descuento (Q)</label>
+          <label class="form-label fw-semibold small">M&eacute;todo de Pago</label>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary btn-sm flex-fill metodo-btn active" data-metodo="Efectivo" onclick="seleccionarMetodo('Efectivo')">
+              <i class="fas fa-money-bill me-1"></i>Efectivo
+            </button>
+            <button type="button" class="btn btn-outline-primary btn-sm flex-fill metodo-btn" data-metodo="Tarjeta" onclick="seleccionarMetodo('Tarjeta')">
+              <i class="fas fa-credit-card me-1"></i>Tarjeta
+            </button>
+            <button type="button" class="btn btn-outline-primary btn-sm flex-fill metodo-btn" data-metodo="Transferencia" onclick="seleccionarMetodo('Transferencia')">
+              <i class="fas fa-university me-1"></i>Transfer.
+            </button>
+          </div>
+          <input type="hidden" id="metodoPago" value="Efectivo">
+        </div>
+        <div id="efectivoPanel" class="mb-3">
+          <label class="form-label fw-semibold small">Monto recibido (Q)</label>
+          <input type="number" id="montoRecibido" class="form-control form-control-sm" 
+                 value="0" min="0" step="0.01" oninput="calcularCambio()">
+          <div class="mt-2 p-2 rounded" style="background:#e8f5e9;" id="cambioPanel">
+            <div class="d-flex justify-content-between">
+              <span class="fw-semibold">Cambio:</span>
+              <strong class="text-success" id="cambioLabel">Q0.00</strong>
+            </div>
+          </div>
+        </div>
           <input type="number" id="descuentoInput" class="form-control form-control-sm" 
                  value="0" min="0" step="0.01" onchange="calcularTotal()">
         </div>
@@ -115,7 +139,26 @@ document.getElementById('codigoBuscar').addEventListener('keydown', function(e) 
   if (e.key === 'Enter') buscarProducto();
 });
 
-async function buscarProducto() {
+function seleccionarMetodo(metodo) {
+  document.getElementById('metodoPago').value = metodo;
+  document.querySelectorAll('.metodo-btn').forEach(b => b.classList.remove('active', 'btn-primary'));
+  document.querySelectorAll('.metodo-btn').forEach(b => b.classList.add('btn-outline-primary'));
+  const btn = document.querySelector(`[data-metodo="${metodo}"]`);
+  btn.classList.remove('btn-outline-primary');
+  btn.classList.add('btn-primary');
+  document.getElementById('efectivoPanel').style.display = metodo === 'Efectivo' ? 'block' : 'none';
+  calcularCambio();
+}
+
+function calcularCambio() {
+  const total = parseFloat(document.getElementById('totalLabel').textContent.replace('Q','')) || 0;
+  const recibido = parseFloat(document.getElementById('montoRecibido').value) || 0;
+  const cambio = Math.max(0, recibido - total);
+  document.getElementById('cambioLabel').textContent = `Q${cambio.toFixed(2)}`;
+  document.getElementById('cambioPanel').style.background = recibido >= total ? '#e8f5e9' : '#ffebee';
+}
+
+
   const codigo = document.getElementById('codigoBuscar').value.trim();
   const cantidad = parseInt(document.getElementById('cantidadInput').value) || 1;
   if (!codigo) return;
@@ -215,6 +258,8 @@ async function procesarVenta() {
   const payload = {
     cliente_id: document.getElementById('clienteSelect').value || null,
     descuento: parseFloat(document.getElementById('descuentoInput').value) || 0,
+    metodo_pago: document.getElementById('metodoPago').value,
+    monto_recibido: parseFloat(document.getElementById('montoRecibido').value) || 0,
     items: carrito.map(i => ({ id: i.id, nombre: i.nombre, precio: i.precio, cantidad: i.cantidad }))
   };
   
@@ -244,3 +289,4 @@ async function procesarVenta() {
 }
 </script>
 {% endblock %}
+
