@@ -157,14 +157,16 @@
   <a href="{{ url_for('medicamentos') }}" class="sidebar-link {% if 'medicamento' in request.endpoint %}active{% endif %}">
     <i class="fas fa-pills"></i> Medicamentos
   </a>
-  {% if current_user.rol != 'Medico' %}
+  {% if current_user.rol == 'Administrador' %}
   <a href="{{ url_for('categorias') }}" class="sidebar-link {% if 'categor' in request.endpoint %}active{% endif %}">
     <i class="fas fa-tags"></i> Categor&iacute;as
   </a>
   <a href="{{ url_for('proveedores') }}" class="sidebar-link {% if 'proveedor' in request.endpoint %}active{% endif %}">
     <i class="fas fa-truck"></i> Proveedores
   </a>
+  {% endif %}
   
+  {% if current_user.rol not in ['Medico'] %}
   <div class="nav-section">Comercial</div>
   <a href="{{ url_for('nueva_venta') }}" class="sidebar-link {% if request.endpoint=='nueva_venta' %}active{% endif %}">
     <i class="fas fa-cash-register"></i> Nueva Venta
@@ -175,7 +177,9 @@
   <a href="{{ url_for('clientes') }}" class="sidebar-link {% if 'cliente' in request.endpoint %}active{% endif %}">
     <i class="fas fa-users"></i> Clientes
   </a>
+  {% endif %}
   
+  {% if current_user.rol == 'Administrador' %}
   <div class="nav-section">Reportes</div>
   <a href="{{ url_for('reporte_ventas') }}" class="sidebar-link {% if request.endpoint=='reporte_ventas' %}active{% endif %}">
     <i class="fas fa-chart-bar"></i> Ventas Diarias
