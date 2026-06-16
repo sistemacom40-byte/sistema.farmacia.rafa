@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Mi Turno{% endblock %}
+{% block page_title %}Mi Turno{% endblock %}
+{% block extra_css %}<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-12">
+    <div class="card" style="border-left: 4px solid #1565C0;">
+      <div class="card-body py-3">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div>
+            <i class="fas fa-user-clock me-2 text-primary"></i>
+            <strong>Cajero: {{ current_user.nombre }}</strong>
+            <span class="text-muted ms-2" style="font-size:.85rem;">{{ hoy }}</span>
+          </div>
+          <div class="d-flex align-items-center gap-3">
+            <div>
+              <span class="text-muted small">Fondo inicial: </span>
+              <strong>Q{{ "%.2f"|format(fondo_caja) }}</strong>
+            </div>
+            <div class="fs-4 fw-bold text-success">
+              Caja: Q{{ "%.2f"|format(fondo_caja + total_efectivo) }}
+            </div>
+            <form method="POST" action="{{ url_for('actualizar_fondo_cajero') }}" class="d-flex gap-2 align-items-center">
+              <input type="number" name="fondo" class="form-control form-control-sm" style="width:100px;"
+                     value="{{ fondo_caja }}" step="0.01" min="0" placeholder="Fondo">
+              <button class="btn btn-outline-success btn-sm">Actualizar</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Totales del turno -->
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e3f2fd;color:#1565C0;"><i class="fas fa-dollar-sign"></i></div>
+      <div>
+        <div class="stat-val">Q{{ "%.2f"|format(total_ventas) }}</div>
+        <div class="stat-lbl">Total Vendido</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e8f5e9;color:#2e7d32;"><i class="fas fa-money-bill"></i></div>
+      <div>
+        <div class="stat-val">Q{{ "%.2f"|format(total_efectivo) }}</div>
+        <div class="stat-lbl">Efectivo</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e8eaf6;color:#3949ab;"><i class="fas fa-credit-card"></i></div>
+      <div>
+        <div class="stat-val">Q{{ "%.2f"|format(total_tarjeta) }}</div>
+        <div class="stat-lbl">Tarjeta</div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fff3e0;color:#e65100;"><i class="fas fa-university"></i></div>
+      <div>
+        <div class="stat-val">Q{{ "%.2f"|format(total_transferencia) }}</div>
+        <div class="stat-lbl">Transferencia</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ventas del turno -->
+<div class="card">
+  <div class="card-header p-3 d-flex justify-content-between align-items-center">
+    <span><i class="fas fa-list me-2 text-primary"></i>Mis Ventas de Hoy</span>
+    <button onclick="window.print()" class="btn btn-outline-primary btn-sm">
+      <i class="fas fa-print me-1"></i>Imprimir Resumen
+    </button>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover align-middle mb-0">
+      <thead>
+        <tr>
+          <th class="ps-3">Factura</th>
+          <th>Hora</th>
+          <th>Cliente</th>
+          <th>Metodo</th>
+          <th>Total</th>
+          <th>Ticket</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in ventas %}
+        <tr>
+          <td class="ps-3"><code>{{ v.numero }}</code></td>
+          <td>{{ v.fecha.strftime('%H:%M') }}</td>
+          <td>{{ v.cliente.nombre if v.cliente else 'General' }}</td>
+          <td>
+            <span class="badge {% if v.metodo_pago=='Efectivo' %}bg-success{% elif v.metodo_pago=='Tarjeta' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
+              {{ v.metodo_pago }}
+            </span>
+          </td>
+          <td><strong>Q{{ "%.2f"|format(v.total) }}</strong></td>
+          <td>
+            <a href="{{ url_for('ticket_venta', id=v.id) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+              <i class="fas fa-print"></i>
+            </a>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">No has realizado ventas hoy</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+@media print {
+  #sidebar, .topbar, .btn, .card-header button { display: none !important; }
+  #main { margin-left: 0 !important; }
+}
+</style>
+{% endblock %}
