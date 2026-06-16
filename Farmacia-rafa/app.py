@@ -488,10 +488,33 @@ def eliminar_usuario(id):
 
 # ─── REPORTES ─────────────────────────────────────────────────────────────────
 
-@app.route('/reportes/ventas')
+@app.route('/mi-turno')
 @login_required
-@solo_admin
-def reporte_ventas():
+def mi_turno():
+    if current_user.rol not in ['Cajero']:
+        return redirect(url_for('reporte_ventas'))
+    hoy = date.today()
+    fondo_caja = float(request.args.get('fondo', 0))
+    ventas = Venta.query.filter(
+        db.func.date(Venta.fecha) == hoy,
+        Venta.usuario_id == current_user.id
+    ).order_by(Venta.fecha.desc()).all()
+    total_ventas = sum(v.total for v in ventas)
+    total_efectivo = sum(v.total for v in ventas if v.metodo_pago == 'Efectivo')
+    total_tarjeta = sum(v.total for v in ventas if v.metodo_pago == 'Tarjeta')
+    total_transferencia = sum(v.total for v in ventas if v.metodo_pago == 'Transferencia')
+    return render_template('mi_turno.html',
+        ventas=ventas, hoy=hoy.strftime('%d/%m/%Y'),
+        total_ventas=total_ventas, total_efectivo=total_efectivo,
+        total_tarjeta=total_tarjeta, total_transferencia=total_transferencia,
+        fondo_caja=fondo_caja
+    )
+
+@app.route('/mi-turno/fondo', methods=['POST'])
+@login_required
+def actualizar_fondo_cajero():
+    fondo = request.form.get('fondo', 0)
+    return redirect(url_for('mi_turno', fondo=fondo))
     desde = request.args.get('desde', date.today().strftime('%Y-%m-%d'))
     hasta = request.args.get('hasta', date.today().strftime('%Y-%m-%d'))
     d = datetime.strptime(desde, '%Y-%m-%d').date()
