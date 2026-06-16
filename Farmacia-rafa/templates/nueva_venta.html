@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="row g-3">
-  <!-- Panel izquierdo: busqueda y carrito -->
+  <!-- Panel izquierdo -->
   <div class="col-lg-8">
     <div class="card mb-3">
       <div class="card-header p-3">
@@ -13,9 +13,8 @@
       <div class="card-body">
         <div class="row g-2 align-items-end">
           <div class="col-md-6">
-            <label class="form-label fw-semibold small">C&oacute;digo de Barra / Nombre</label>
-            <input type="text" id="codigoBuscar" class="form-control" 
-                   placeholder="Escanea o escribe..." autofocus>
+            <label class="form-label fw-semibold small">Codigo de Barra / Nombre</label>
+            <input type="text" id="codigoBuscar" class="form-control" placeholder="Escanea o escribe..." autofocus>
           </div>
           <div class="col-md-3">
             <label class="form-label fw-semibold small">Cantidad</label>
@@ -30,14 +29,14 @@
         <div id="resultadoBusqueda" class="mt-2"></div>
       </div>
     </div>
-    
+
     <div class="card">
       <div class="card-header p-3">
         <i class="fas fa-shopping-cart me-2 text-primary"></i>Carrito
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
-          <table class="table align-middle mb-0" id="tablaCarrito">
+          <table class="table align-middle mb-0">
             <thead>
               <tr>
                 <th class="ps-3">Producto</th>
@@ -48,7 +47,7 @@
               </tr>
             </thead>
             <tbody id="carritoBody">
-              <tr id="carritoVacio">
+              <tr>
                 <td colspan="5" class="text-center text-muted py-4">
                   <i class="fas fa-shopping-cart fa-2x mb-2 d-block opacity-25"></i>
                   Agrega productos escaneando o buscando
@@ -60,14 +59,16 @@
       </div>
     </div>
   </div>
-  
-  <!-- Panel derecho: resumen -->
+
+  <!-- Panel derecho -->
   <div class="col-lg-4">
     <div class="card">
       <div class="card-header p-3">
         <i class="fas fa-receipt me-2 text-primary"></i>Resumen
       </div>
       <div class="card-body">
+
+        <!-- 1. Cliente -->
         <div class="mb-3">
           <label class="form-label fw-semibold small">Cliente (opcional)</label>
           <select id="clienteSelect" class="form-select form-select-sm">
@@ -77,10 +78,12 @@
             {% endfor %}
           </select>
         </div>
+
+        <!-- 2. Metodo de pago -->
         <div class="mb-3">
-          <label class="form-label fw-semibold small">M&eacute;todo de Pago</label>
+          <label class="form-label fw-semibold small">Metodo de Pago</label>
           <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-primary btn-sm flex-fill metodo-btn active" data-metodo="Efectivo" onclick="seleccionarMetodo('Efectivo')">
+            <button type="button" class="btn btn-primary btn-sm flex-fill metodo-btn" data-metodo="Efectivo" onclick="seleccionarMetodo('Efectivo')">
               <i class="fas fa-money-bill me-1"></i>Efectivo
             </button>
             <button type="button" class="btn btn-outline-primary btn-sm flex-fill metodo-btn" data-metodo="Tarjeta" onclick="seleccionarMetodo('Tarjeta')">
@@ -92,21 +95,30 @@
           </div>
           <input type="hidden" id="metodoPago" value="Efectivo">
         </div>
+
+        <!-- 3. Monto recibido y cambio (solo efectivo) -->
         <div id="efectivoPanel" class="mb-3">
           <label class="form-label fw-semibold small">Monto recibido (Q)</label>
-          <input type="number" id="montoRecibido" class="form-control form-control-sm" 
+          <input type="number" id="montoRecibido" class="form-control form-control-sm"
                  value="0" min="0" step="0.01" oninput="calcularCambio()">
-          <div class="mt-2 p-2 rounded" style="background:#e8f5e9;" id="cambioPanel">
+          <div class="mt-2 p-2 rounded" id="cambioPanel" style="background:#e8f5e9;">
             <div class="d-flex justify-content-between">
               <span class="fw-semibold">Cambio:</span>
               <strong class="text-success" id="cambioLabel">Q0.00</strong>
             </div>
           </div>
         </div>
-          <input type="number" id="descuentoInput" class="form-control form-control-sm" 
-                 value="0" min="0" step="0.01" onchange="calcularTotal()">
+
+        <!-- 4. Descuento -->
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Descuento (Q)</label>
+          <input type="number" id="descuentoInput" class="form-control form-control-sm"
+                 value="0" min="0" step="0.01" onchange="calcularTotal()" autocomplete="off">
         </div>
+
         <hr>
+
+        <!-- 5. Totales -->
         <div class="d-flex justify-content-between mb-2">
           <span class="text-muted">Subtotal</span>
           <strong id="subtotalLabel">Q0.00</strong>
@@ -119,6 +131,7 @@
           <strong>Total</strong>
           <strong class="text-primary" id="totalLabel">Q0.00</strong>
         </div>
+
         <button class="btn btn-success w-100 py-2 fw-bold" onclick="procesarVenta()">
           <i class="fas fa-check-circle me-2"></i>Finalizar Venta
         </button>
@@ -141,8 +154,10 @@ document.getElementById('codigoBuscar').addEventListener('keydown', function(e) 
 
 function seleccionarMetodo(metodo) {
   document.getElementById('metodoPago').value = metodo;
-  document.querySelectorAll('.metodo-btn').forEach(b => b.classList.remove('active', 'btn-primary'));
-  document.querySelectorAll('.metodo-btn').forEach(b => b.classList.add('btn-outline-primary'));
+  document.querySelectorAll('.metodo-btn').forEach(b => {
+    b.classList.remove('btn-primary');
+    b.classList.add('btn-outline-primary');
+  });
   const btn = document.querySelector(`[data-metodo="${metodo}"]`);
   btn.classList.remove('btn-outline-primary');
   btn.classList.add('btn-primary');
@@ -162,10 +177,10 @@ async function buscarProducto() {
   const codigo = document.getElementById('codigoBuscar').value.trim();
   const cantidad = parseInt(document.getElementById('cantidadInput').value) || 1;
   if (!codigo) return;
-  
+
   const res = await fetch(`/medicamentos/buscar_codigo?codigo=${encodeURIComponent(codigo)}`);
   const data = await res.json();
-  
+
   if (data.found) {
     agregarAlCarrito(data, cantidad);
     document.getElementById('codigoBuscar').value = '';
@@ -173,7 +188,7 @@ async function buscarProducto() {
     document.getElementById('resultadoBusqueda').innerHTML = '';
     document.getElementById('codigoBuscar').focus();
   } else {
-    document.getElementById('resultadoBusqueda').innerHTML = 
+    document.getElementById('resultadoBusqueda').innerHTML =
       '<div class="alert alert-warning py-2 mt-2"><i class="fas fa-exclamation-triangle me-1"></i>Producto no encontrado</div>';
   }
 }
@@ -183,8 +198,7 @@ function agregarAlCarrito(prod, cantidad) {
   if (existente) {
     existente.cantidad += cantidad;
   } else {
-    carrito.push({ id: prod.id, nombre: prod.nombre, precio: prod.precio, 
-                   stock: prod.stock, cantidad: cantidad });
+    carrito.push({ id: prod.id, nombre: prod.nombre, precio: prod.precio, stock: prod.stock, cantidad: cantidad });
   }
   renderCarrito();
 }
@@ -192,15 +206,12 @@ function agregarAlCarrito(prod, cantidad) {
 function renderCarrito() {
   const tbody = document.getElementById('carritoBody');
   if (carrito.length === 0) {
-    tbody.innerHTML = `<tr id="carritoVacio">
-      <td colspan="5" class="text-center text-muted py-4">
-        <i class="fas fa-shopping-cart fa-2x mb-2 d-block opacity-25"></i>
-        Agrega productos escaneando o buscando
-      </td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">
+      <i class="fas fa-shopping-cart fa-2x mb-2 d-block opacity-25"></i>
+      Agrega productos escaneando o buscando</td></tr>`;
     calcularTotal();
     return;
   }
-  
   tbody.innerHTML = carrito.map((item, idx) => `
     <tr>
       <td class="ps-3">
@@ -209,7 +220,7 @@ function renderCarrito() {
       </td>
       <td>Q${item.precio.toFixed(2)}</td>
       <td style="width:100px;">
-        <input type="number" class="form-control form-control-sm" value="${item.cantidad}" 
+        <input type="number" class="form-control form-control-sm" value="${item.cantidad}"
                min="1" max="${item.stock}" onchange="cambiarCantidad(${idx}, this.value)">
       </td>
       <td><strong>Q${(item.precio * item.cantidad).toFixed(2)}</strong></td>
@@ -246,23 +257,32 @@ function calcularTotal() {
   document.getElementById('subtotalLabel').textContent = `Q${subtotal.toFixed(2)}`;
   document.getElementById('descuentoLabel').textContent = `-Q${descuento.toFixed(2)}`;
   document.getElementById('totalLabel').textContent = `Q${total.toFixed(2)}`;
+  calcularCambio();
 }
 
 async function procesarVenta() {
   if (carrito.length === 0) { alert('Agrega productos al carrito'); return; }
-  
+
+  const metodo = document.getElementById('metodoPago').value;
+  const monto = parseFloat(document.getElementById('montoRecibido').value) || 0;
+  const total = parseFloat(document.getElementById('totalLabel').textContent.replace('Q','')) || 0;
+
+  if (metodo === 'Efectivo' && monto < total) {
+    alert('El monto recibido es menor al total'); return;
+  }
+
   const btn = document.querySelector('.btn-success');
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
-  
+
   const payload = {
     cliente_id: document.getElementById('clienteSelect').value || null,
     descuento: parseFloat(document.getElementById('descuentoInput').value) || 0,
-    metodo_pago: document.getElementById('metodoPago').value,
-    monto_recibido: parseFloat(document.getElementById('montoRecibido').value) || 0,
+    metodo_pago: metodo,
+    monto_recibido: monto,
     items: carrito.map(i => ({ id: i.id, nombre: i.nombre, precio: i.precio, cantidad: i.cantidad }))
   };
-  
+
   try {
     const res = await fetch('/ventas/nueva', {
       method: 'POST',
@@ -271,19 +291,20 @@ async function procesarVenta() {
     });
     const data = await res.json();
     if (data.success) {
-      // Abrir ticket en nueva ventana para imprimir
       window.open(`/ventas/ticket/${data.venta_id}`, '_blank');
       carrito = [];
       renderCarrito();
       document.getElementById('clienteSelect').value = '';
       document.getElementById('descuentoInput').value = '0';
+      document.getElementById('montoRecibido').value = '0';
+      calcularCambio();
     } else {
       alert(data.error || 'Error al procesar la venta');
     }
   } catch(e) {
     alert('Error de conexion');
   }
-  
+
   btn.disabled = false;
   btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Finalizar Venta';
 }
