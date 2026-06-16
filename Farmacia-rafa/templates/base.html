@@ -177,6 +177,11 @@
   <a href="{{ url_for('clientes') }}" class="sidebar-link {% if 'cliente' in request.endpoint %}active{% endif %}">
     <i class="fas fa-users"></i> Clientes
   </a>
+  {% if current_user.rol == 'Cajero' %}
+  <a href="{{ url_for('mi_turno') }}" class="sidebar-link {% if request.endpoint=='mi_turno' %}active{% endif %}">
+    <i class="fas fa-clock"></i> Mi Turno
+  </a>
+  {% endif %}
   {% endif %}
   
   {% if current_user.rol == 'Administrador' %}
