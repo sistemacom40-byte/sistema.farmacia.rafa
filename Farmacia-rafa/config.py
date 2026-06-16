@@ -1,4 +1,5 @@
 import os
+import ssl
 
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'farmacia-rafa-secret-2024')
@@ -13,6 +14,13 @@ class Config:
     
     SQLALCHEMY_DATABASE_URI = DATABASE_URL or 'sqlite:///farmacia.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ENGINE_OPTIONS = {
-        'connect_args': {'ssl_context': True} if DATABASE_URL else {}
-    }
+    
+    if DATABASE_URL:
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        SQLALCHEMY_ENGINE_OPTIONS = {
+            'connect_args': {'ssl_context': ssl_context}
+        }
+    else:
+        SQLALCHEMY_ENGINE_OPTIONS = {}
