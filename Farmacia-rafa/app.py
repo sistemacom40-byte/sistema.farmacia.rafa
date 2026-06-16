@@ -35,6 +35,18 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
+def solo_admin(f):
+    """Bloquea Cajero y Medico - solo Administrador"""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if current_user.rol not in ['Administrador']:
+            flash('No tienes permiso para acceder a esta seccion', 'danger')
+            if current_user.rol == 'Medico':
+                return redirect(url_for('medicamentos'))
+            return redirect(url_for('nueva_venta'))
+        return f(*args, **kwargs)
+    return decorated
+
 def no_medico(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -70,6 +82,8 @@ def login():
             login_user(user)
             if user.rol == 'Medico':
                 return redirect(url_for('medicamentos'))
+            if user.rol == 'Cajero':
+                return redirect(url_for('nueva_venta'))
             return redirect(url_for('dashboard'))
         flash('Correo o contrasena incorrectos', 'danger')
     return render_template('login.html')
@@ -140,7 +154,7 @@ def medicamentos():
 
 @app.route('/medicamentos/nuevo', methods=['GET', 'POST'])
 @login_required
-@no_medico
+@solo_admin
 def nuevo_medicamento():
     if request.method == 'POST':
         med = Medicamento(
@@ -167,7 +181,7 @@ def nuevo_medicamento():
 
 @app.route('/medicamentos/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
-@no_medico
+@solo_admin
 def editar_medicamento(id):
     med = Medicamento.query.get_or_404(id)
     if request.method == 'POST':
@@ -213,7 +227,7 @@ def buscar_por_codigo():
 
 @app.route('/categorias')
 @login_required
-@no_medico
+@solo_admin
 def categorias():
     cats = Categoria.query.all()
     return render_template('categorias.html', cats=cats)
@@ -251,7 +265,7 @@ def eliminar_categoria(id):
 
 @app.route('/proveedores')
 @login_required
-@no_medico
+@solo_admin
 def proveedores():
     provs = Proveedor.query.all()
     return render_template('proveedores.html', provs=provs)
@@ -476,7 +490,7 @@ def eliminar_usuario(id):
 
 @app.route('/reportes/ventas')
 @login_required
-@no_medico
+@solo_admin
 def reporte_ventas():
     desde = request.args.get('desde', date.today().strftime('%Y-%m-%d'))
     hasta = request.args.get('hasta', date.today().strftime('%Y-%m-%d'))
@@ -522,7 +536,7 @@ def actualizar_fondo():
 
 @app.route('/reportes/inventario')
 @login_required
-@no_medico
+@solo_admin
 def reporte_inventario():
     buscar = request.args.get('buscar', '')
     query = Medicamento.query
