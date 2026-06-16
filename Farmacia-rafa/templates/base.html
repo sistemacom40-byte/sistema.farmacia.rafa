@@ -146,15 +146,18 @@
     <span class="badge" style="background:{% if current_user.rol=='Administrador' %}#7b1fa2{% else %}#0288d1{% endif %};font-size:0.65rem;">{{ current_user.rol }}</span>
   </div>
   
+  {% if current_user.rol != 'Medico' %}
   <div class="nav-section">Principal</div>
   <a href="{{ url_for('dashboard') }}" class="sidebar-link {% if request.endpoint=='dashboard' %}active{% endif %}">
     <i class="fas fa-th-large"></i> Dashboard
   </a>
+  {% endif %}
   
   <div class="nav-section">Inventario</div>
   <a href="{{ url_for('medicamentos') }}" class="sidebar-link {% if 'medicamento' in request.endpoint %}active{% endif %}">
     <i class="fas fa-pills"></i> Medicamentos
   </a>
+  {% if current_user.rol != 'Medico' %}
   <a href="{{ url_for('categorias') }}" class="sidebar-link {% if 'categor' in request.endpoint %}active{% endif %}">
     <i class="fas fa-tags"></i> Categor&iacute;as
   </a>
@@ -180,6 +183,7 @@
   <a href="{{ url_for('reporte_inventario') }}" class="sidebar-link {% if request.endpoint=='reporte_inventario' %}active{% endif %}">
     <i class="fas fa-boxes"></i> Inventario
   </a>
+  {% endif %}
   
   {% if current_user.rol == 'Administrador' %}
   <div class="nav-section">Admin</div>
