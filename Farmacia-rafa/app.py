@@ -589,14 +589,6 @@ def reporte_ventas():
         fondo_caja=fondo_caja
     )
 
-@app.route('/reportes/fondo', methods=['POST'])
-@login_required
-def actualizar_fondo():
-    fondo = request.form.get('fondo', 0)
-    desde = request.form.get('desde', date.today().strftime('%Y-%m-%d'))
-    hasta = request.form.get('hasta', date.today().strftime('%Y-%m-%d'))
-    return redirect(url_for('reporte_ventas', desde=desde, hasta=hasta, fondo=fondo))
-
 @app.route('/reportes/inventario')
 @login_required
 @solo_admin
