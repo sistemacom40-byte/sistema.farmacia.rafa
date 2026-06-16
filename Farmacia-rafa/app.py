@@ -35,6 +35,15 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
+def no_medico(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if current_user.rol == 'Medico':
+            flash('No tienes permiso para acceder a esta seccion', 'danger')
+            return redirect(url_for('medicamentos'))
+        return f(*args, **kwargs)
+    return decorated
+
 with app.app_context():
     db.create_all()
     if not Usuario.query.filter_by(correo='sistemacom40@gmail.com').first():
@@ -59,6 +68,8 @@ def login():
         user = Usuario.query.filter_by(correo=correo, activo=True).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
+            if user.rol == 'Medico':
+                return redirect(url_for('medicamentos'))
             return redirect(url_for('dashboard'))
         flash('Correo o contrasena incorrectos', 'danger')
     return render_template('login.html')
@@ -73,6 +84,7 @@ def logout():
 
 @app.route('/dashboard')
 @login_required
+@no_medico
 def dashboard():
     total_meds = Medicamento.query.count()
     total_clientes = Cliente.query.count()
@@ -128,6 +140,7 @@ def medicamentos():
 
 @app.route('/medicamentos/nuevo', methods=['GET', 'POST'])
 @login_required
+@no_medico
 def nuevo_medicamento():
     if request.method == 'POST':
         med = Medicamento(
@@ -154,6 +167,7 @@ def nuevo_medicamento():
 
 @app.route('/medicamentos/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
+@no_medico
 def editar_medicamento(id):
     med = Medicamento.query.get_or_404(id)
     if request.method == 'POST':
@@ -199,6 +213,7 @@ def buscar_por_codigo():
 
 @app.route('/categorias')
 @login_required
+@no_medico
 def categorias():
     cats = Categoria.query.all()
     return render_template('categorias.html', cats=cats)
@@ -236,6 +251,7 @@ def eliminar_categoria(id):
 
 @app.route('/proveedores')
 @login_required
+@no_medico
 def proveedores():
     provs = Proveedor.query.all()
     return render_template('proveedores.html', provs=provs)
@@ -280,6 +296,7 @@ def eliminar_proveedor(id):
 
 @app.route('/clientes')
 @login_required
+@no_medico
 def clientes():
     buscar = request.args.get('buscar', '')
     query = Cliente.query
@@ -327,6 +344,7 @@ def eliminar_cliente(id):
 
 @app.route('/ventas')
 @login_required
+@no_medico
 def ventas():
     buscar = request.args.get('buscar', '')
     desde = request.args.get('desde', '')
@@ -347,6 +365,7 @@ def ventas():
 
 @app.route('/ventas/nueva', methods=['GET', 'POST'])
 @login_required
+@no_medico
 def nueva_venta():
     if request.method == 'POST':
         data = request.get_json()
@@ -457,6 +476,7 @@ def eliminar_usuario(id):
 
 @app.route('/reportes/ventas')
 @login_required
+@no_medico
 def reporte_ventas():
     desde = request.args.get('desde', date.today().strftime('%Y-%m-%d'))
     hasta = request.args.get('hasta', date.today().strftime('%Y-%m-%d'))
@@ -502,6 +522,7 @@ def actualizar_fondo():
 
 @app.route('/reportes/inventario')
 @login_required
+@no_medico
 def reporte_inventario():
     buscar = request.args.get('buscar', '')
     query = Medicamento.query
@@ -683,5 +704,3 @@ def exportar_proveedores_excel():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
-
-     
