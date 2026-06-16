@@ -7,12 +7,11 @@ class Config:
     
     if DATABASE_URL:
         if DATABASE_URL.startswith('postgres://'):
-            DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql+psycopg2://', 1)
-        elif DATABASE_URL.startswith('postgresql://') and '+' not in DATABASE_URL:
-            DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+psycopg2://', 1)
-        if '?' not in DATABASE_URL:
-            DATABASE_URL += '?sslmode=require'
+            DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql+pg8000://', 1)
+        elif DATABASE_URL.startswith('postgresql://'):
+            DATABASE_URL = DATABASE_URL.replace('postgresql://', 'postgresql+pg8000://', 1)
     
     SQLALCHEMY_DATABASE_URI = DATABASE_URL or 'sqlite:///farmacia.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {'pool_pre_ping': True}
+
