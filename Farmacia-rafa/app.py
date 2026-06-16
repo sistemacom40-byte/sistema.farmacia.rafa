@@ -557,6 +557,46 @@ def actualizar_fondo():
     hasta = request.form.get('hasta', date.today().strftime('%Y-%m-%d'))
     return redirect(url_for('reporte_ventas', desde=desde, hasta=hasta, fondo=fondo))
 
+@app.route('/reportes/ventas')
+@login_required
+@solo_admin
+def reporte_ventas():
+    desde = request.args.get('desde', date.today().strftime('%Y-%m-%d'))
+    hasta = request.args.get('hasta', date.today().strftime('%Y-%m-%d'))
+    d = datetime.strptime(desde, '%Y-%m-%d').date()
+    h = datetime.strptime(hasta, '%Y-%m-%d').date()
+    vs = Venta.query.filter(
+        db.func.date(Venta.fecha) >= d,
+        db.func.date(Venta.fecha) <= h
+    ).order_by(Venta.fecha.desc()).all()
+    total_ventas = sum(v.total for v in vs)
+    total_transacciones = len(vs)
+    promedio = total_ventas / total_transacciones if total_transacciones else 0
+    total_efectivo = sum(v.total for v in vs if v.metodo_pago == 'Efectivo')
+    total_tarjeta = sum(v.total for v in vs if v.metodo_pago == 'Tarjeta')
+    total_transferencia = sum(v.total for v in vs if v.metodo_pago == 'Transferencia')
+    fondo_caja = float(request.args.get('fondo', 0))
+    por_dia = {}
+    for v in vs:
+        key = v.fecha.strftime('%d/%m')
+        por_dia[key] = por_dia.get(key, 0) + v.total
+    return render_template('reporte_ventas.html',
+        vs=vs, desde=desde, hasta=hasta,
+        total_ventas=total_ventas, total_transacciones=total_transacciones,
+        promedio=promedio, por_dia=por_dia,
+        total_efectivo=total_efectivo, total_tarjeta=total_tarjeta,
+        total_transferencia=total_transferencia,
+        fondo_caja=fondo_caja
+    )
+
+@app.route('/reportes/fondo', methods=['POST'])
+@login_required
+def actualizar_fondo():
+    fondo = request.form.get('fondo', 0)
+    desde = request.form.get('desde', date.today().strftime('%Y-%m-%d'))
+    hasta = request.form.get('hasta', date.today().strftime('%Y-%m-%d'))
+    return redirect(url_for('reporte_ventas', desde=desde, hasta=hasta, fondo=fondo))
+
 @app.route('/reportes/inventario')
 @login_required
 @solo_admin
