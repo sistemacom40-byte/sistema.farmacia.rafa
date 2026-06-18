@@ -291,13 +291,17 @@ async function procesarVenta() {
     });
     const data = await res.json();
     if (data.success) {
-      window.open(`/ventas/ticket/${data.venta_id}`, '_blank');
+      // Abrir ticket en nueva ventana
+      const ticketWin = window.open(`/ventas/ticket/${data.venta_id}`, '_blank');
+      // Limpiar todo
       carrito = [];
       renderCarrito();
       document.getElementById('clienteSelect').value = '';
       document.getElementById('descuentoInput').value = '0';
       document.getElementById('montoRecibido').value = '0';
-      calcularCambio();
+      seleccionarMetodo('Efectivo');
+      calcularTotal();
+      document.getElementById('codigoBuscar').focus();
     } else {
       alert(data.error || 'Error al procesar la venta');
     }
