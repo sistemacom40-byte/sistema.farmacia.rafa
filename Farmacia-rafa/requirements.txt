@@ -4,3 +4,4 @@ flask-login==0.6.3
 werkzeug==3.0.3
 gunicorn==22.0.0
 pg8000==1.31.1
+pytz==2024.1
