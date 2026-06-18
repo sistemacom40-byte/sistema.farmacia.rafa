@@ -2,6 +2,12 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date, timedelta
+import pytz
+
+ZONA_HORARIA = pytz.timezone('America/Guatemala')
+
+def hora_local():
+    return datetime.now(ZONA_HORARIA).replace(tzinfo=None)
 from functools import wraps
 import os
 
@@ -24,7 +30,7 @@ def load_user(user_id):
 
 @app.context_processor
 def inject_now():
-    return {'now': datetime.now()}
+    return {'now': hora_local()}
 
 def admin_required(f):
     @wraps(f)
@@ -392,17 +398,21 @@ def nueva_venta():
         if not items:
             return jsonify({'error': 'No hay productos en la venta'}), 400
         
+        subtotal = sum(float(i['precio']) * int(i['cantidad']) for i in items)
+        if subtotal <= 0:
+            return jsonify({'error': 'El total de la venta debe ser mayor a cero'}), 400
+        
         # Generar numero de venta
         ultimo = Venta.query.order_by(Venta.id.desc()).first()
         num = f"F-{str((ultimo.id if ultimo else 0) + 1).zfill(6)}"
         
-        subtotal = sum(float(i['precio']) * int(i['cantidad']) for i in items)
         total = subtotal - descuento
         
         venta = Venta(
             numero=num,
             cliente_id=cliente_id,
             usuario_id=current_user.id,
+            fecha=hora_local(),
             subtotal=subtotal,
             descuento=descuento,
             total=total,
@@ -773,3 +783,4 @@ def exportar_proveedores_excel():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
+            
