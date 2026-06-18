@@ -92,9 +92,9 @@
 </div>
 
 <script>
-  // Imprimir automaticamente al abrir
-  window.onload = function() { window.print(); }
+  window.onload = function() { 
+    setTimeout(function() { window.print(); }, 500);
+  }
 </script>
 </body>
 </html>
-
