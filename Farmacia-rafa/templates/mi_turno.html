@@ -89,6 +89,7 @@
           <th class="ps-3">Factura</th>
           <th>Hora</th>
           <th>Cliente</th>
+          <th>Cajero</th>
           <th>Metodo</th>
           <th>Total</th>
           <th>Ticket</th>
@@ -100,6 +101,7 @@
           <td class="ps-3"><code>{{ v.numero }}</code></td>
           <td>{{ v.fecha.strftime('%H:%M') }}</td>
           <td>{{ v.cliente.nombre if v.cliente else 'General' }}</td>
+          <td>{{ v.usuario.nombre }}</td>
           <td>
             <span class="badge {% if v.metodo_pago=='Efectivo' %}bg-success{% elif v.metodo_pago=='Tarjeta' %}bg-primary{% else %}bg-warning text-dark{% endif %}">
               {{ v.metodo_pago }}
@@ -113,7 +115,7 @@
           </td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="text-center text-muted py-4">No has realizado ventas hoy</td></tr>
+        <tr><td colspan="7" class="text-center text-muted py-4">No hay ventas hoy</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -126,4 +128,4 @@
   #main { margin-left: 0 !important; }
 }
 </style>
-{% endblock %}
+{% endblock %}6
