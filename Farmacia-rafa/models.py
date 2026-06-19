@@ -67,6 +67,12 @@ class Venta(db.Model):
     detalles = db.relationship('DetalleVenta', backref='venta', lazy=True)
     usuario = db.relationship('Usuario', backref='ventas')
 
+class FondoCaja(db.Model):
+    __tablename__ = "fondo_caja"
+    id = db.Column(db.Integer, primary_key=True)
+    fecha = db.Column(db.Date, unique=True, nullable=False)
+    monto = db.Column(db.Float, default=0)
+
 class DetalleVenta(db.Model):
     __tablename__ = "detalle_venta"
     id = db.Column(db.Integer, primary_key=True)
