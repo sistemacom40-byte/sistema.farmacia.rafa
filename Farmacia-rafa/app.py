@@ -12,7 +12,7 @@ from functools import wraps
 import os
 
 from config import Config
-from models import db, Usuario, Categoria, Proveedor, Medicamento, Cliente, Venta, DetalleVenta
+from models import db, Usuario, Categoria, Proveedor, Medicamento, Cliente, Venta, DetalleVenta, FondoCaja
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -110,7 +110,7 @@ def dashboard():
     total_clientes = Cliente.query.count()
     total_proveedores = Proveedor.query.count()
     
-    hoy = date.today()
+    hoy = hora_local().date()
     inicio_semana = hoy - timedelta(days=6)
     ventas_hoy = Venta.query.filter(db.func.date(Venta.fecha) == hoy).all()
     ventas_hoy_total = sum(v.total for v in ventas_hoy)
@@ -503,11 +503,11 @@ def eliminar_usuario(id):
 def mi_turno():
     if current_user.rol not in ['Cajero']:
         return redirect(url_for('reporte_ventas'))
-    hoy = date.today()
-    fondo_caja = float(request.args.get('fondo', 0))
+    hoy = hora_local().date()
+    fondo_obj = FondoCaja.query.filter_by(fecha=hoy).first()
+    fondo_caja = fondo_obj.monto if fondo_obj else 0
     ventas = Venta.query.filter(
-        db.func.date(Venta.fecha) == hoy,
-        Venta.usuario_id == current_user.id
+        db.func.date(Venta.fecha) == hoy
     ).order_by(Venta.fecha.desc()).all()
     total_ventas = sum(v.total for v in ventas)
     total_efectivo = sum(v.total for v in ventas if v.metodo_pago == 'Efectivo')
@@ -523,10 +523,18 @@ def mi_turno():
 @app.route('/mi-turno/fondo', methods=['POST'])
 @login_required
 def actualizar_fondo_cajero():
-    fondo = request.form.get('fondo', 0)
-    return redirect(url_for('mi_turno', fondo=fondo))
-    desde = request.args.get('desde', date.today().strftime('%Y-%m-%d'))
-    hasta = request.args.get('hasta', date.today().strftime('%Y-%m-%d'))
+    fondo = float(request.form.get('fondo', 0))
+    hoy = hora_local().date()
+    fondo_obj = FondoCaja.query.filter_by(fecha=hoy).first()
+    if fondo_obj:
+        fondo_obj.monto = fondo
+    else:
+        fondo_obj = FondoCaja(fecha=hoy, monto=fondo)
+        db.session.add(fondo_obj)
+    db.session.commit()
+    return redirect(url_for('mi_turno'))
+    desde = request.args.get('desde', hora_local().strftime('%Y-%m-%d'))
+    hasta = request.args.get('hasta', hora_local().strftime('%Y-%m-%d'))
     d = datetime.strptime(desde, '%Y-%m-%d').date()
     h = datetime.strptime(hasta, '%Y-%m-%d').date()
     
@@ -562,17 +570,25 @@ def actualizar_fondo_cajero():
 @app.route('/reportes/fondo', methods=['POST'])
 @login_required
 def actualizar_fondo():
-    fondo = request.form.get('fondo', 0)
-    desde = request.form.get('desde', date.today().strftime('%Y-%m-%d'))
-    hasta = request.form.get('hasta', date.today().strftime('%Y-%m-%d'))
-    return redirect(url_for('reporte_ventas', desde=desde, hasta=hasta, fondo=fondo))
+    fondo = float(request.form.get('fondo', 0))
+    desde = request.form.get('desde', hora_local().strftime('%Y-%m-%d'))
+    hasta = request.form.get('hasta', hora_local().strftime('%Y-%m-%d'))
+    hoy = hora_local().date()
+    fondo_obj = FondoCaja.query.filter_by(fecha=hoy).first()
+    if fondo_obj:
+        fondo_obj.monto = fondo
+    else:
+        fondo_obj = FondoCaja(fecha=hoy, monto=fondo)
+        db.session.add(fondo_obj)
+    db.session.commit()
+    return redirect(url_for('reporte_ventas', desde=desde, hasta=hasta))
 
 @app.route('/reportes/ventas')
 @login_required
 @solo_admin
 def reporte_ventas():
-    desde = request.args.get('desde', date.today().strftime('%Y-%m-%d'))
-    hasta = request.args.get('hasta', date.today().strftime('%Y-%m-%d'))
+    desde = request.args.get('desde', hora_local().strftime('%Y-%m-%d'))
+    hasta = request.args.get('hasta', hora_local().strftime('%Y-%m-%d'))
     d = datetime.strptime(desde, '%Y-%m-%d').date()
     h = datetime.strptime(hasta, '%Y-%m-%d').date()
     vs = Venta.query.filter(
@@ -585,7 +601,9 @@ def reporte_ventas():
     total_efectivo = sum(v.total for v in vs if v.metodo_pago == 'Efectivo')
     total_tarjeta = sum(v.total for v in vs if v.metodo_pago == 'Tarjeta')
     total_transferencia = sum(v.total for v in vs if v.metodo_pago == 'Transferencia')
-    fondo_caja = float(request.args.get('fondo', 0))
+    hoy = hora_local().date()
+    fondo_obj = FondoCaja.query.filter_by(fecha=hoy).first()
+    fondo_caja = fondo_obj.monto if fondo_obj else 0
     por_dia = {}
     for v in vs:
         key = v.fecha.strftime('%d/%m')
@@ -650,8 +668,8 @@ def cambiar_password():
 @app.route('/reportes/ventas/excel')
 @login_required
 def exportar_ventas_excel():
-    desde = request.args.get('desde', date.today().strftime('%Y-%m-%d'))
-    hasta = request.args.get('hasta', date.today().strftime('%Y-%m-%d'))
+    desde = request.args.get('desde', hora_local().strftime('%Y-%m-%d'))
+    hasta = request.args.get('hasta', hora_local().strftime('%Y-%m-%d'))
     d = datetime.strptime(desde, '%Y-%m-%d').date()
     h = datetime.strptime(hasta, '%Y-%m-%d').date()
     vs = Venta.query.filter(
@@ -783,4 +801,5 @@ def exportar_proveedores_excel():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)
-            
+   
+     
